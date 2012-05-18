@@ -1,10 +1,11 @@
 package main
 
 import (
+    "bytes"
+    "container/list"
     "fmt"
     "net"
-    "container/list"
-    "bytes"
+    "strings"
 )
 
 type Client struct {
@@ -23,7 +24,7 @@ func (c *Client) Read(buffer []byte) bool {
         Log(error)
         return false
     }
-    Log("Read ", bytesread, " bytes")
+    Log("Read", bytesread, "bytes")
     return true
 }
 
@@ -53,14 +54,14 @@ func (c *Client) Remove() {
 }
 
 func Log(v ...interface{}) {
-    fmt.PrintLn(v...)
+    fmt.Println(v...)
 }
 
 func IOHandler(Incoming <-chan string, clientList *list.List) {
     for {
         Log("IOHandler: Waiting for input")
         input := <-Incoming
-        Log("IOHandler: Handling ", input)
+        Log("IOHandler: Handling", input)
         for e := clientList.Front(); e != nil; e = e.Next() {
             client := e.Value.(Client)
             client.Incoming <- input
@@ -72,38 +73,40 @@ func ClientReader(client *Client) {
     buffer := make([]byte, 2048)
 
     for client.Read(buffer) {
-        if bytes.Equal(buffer, []byte("QUIT")) {
+        // Find just the text content of the buffer.
+        count := bytes.IndexByte(buffer, byte(0x00))
+        if count == -1 {
+            count = len(buffer)
+        }
+        text := string(buffer[:count])
+        text = strings.TrimRight(text, "\r\n")
+
+        if text == "QUIT" {
             client.Close()
             break
         }
 
-        Log("ClientReader received ", client.Name, "> ", string(buffer))
-        send := client.Name + "> " + string(buffer)
+        Log("ClientReader received", client.Name, ">", text)
+        send := client.Name + "> " + text
         client.Outgoing <- send
-        for i := 0; i < 2048, i++ {
+
+        // Then reset the buffer.
+        for i := 0; i < 2048; i++ {
             buffer[i] = 0x00
         }
     }
 
     client.Outgoing <- client.Name + " has left chat"
-    Log("ClientReader stopped for ", client.Name)
+    Log("ClientReader stopped for", client.Name)
 }
 
 func ClientSender(client *Client) {
     for {
         select {
             case buffer := <-client.Incoming:
-                Log("ClientSender sending ", string(buffer), " to ", client.Name);
-                count := 0
-                for i := 0; i < len(buffer); i++ {
-                    if buffer[i] == 0x00 {
-                        break
-                    }
-                    count++
-                }
-
-                Log("Send size: ", count)
-                client.Conn.Write([]byte(buffer)[0:count])
+                Log("ClientSender sending", buffer, "to", client.Name);
+                client.Conn.Write([]byte(buffer))
+                client.Conn.Write([]byte("\n"))
 
             case <-client.Quit:
                 Log("Client ", client.Name, " quitting")
@@ -122,6 +125,7 @@ func ClientHandler(conn net.Conn, ch chan string, clientList *list.List) {
     }
 
     name := string(buffer[0:bytesread])
+    name = strings.TrimRight(name, "\r\n")
     newClient := &Client{name, make(chan string), ch, conn, make(chan bool), clientList}
 
     go ClientSender(newClient)
@@ -137,7 +141,7 @@ func main() {
     in := make(chan string)
     go IOHandler(in, clientList)
 
-    service := ":9988"
+    service := "localhost:9988"
     tcpAddr, error := net.ResolveTCPAddr("tcp", service)
     if error != nil {
         Log("Could not resolve address")
@@ -146,7 +150,7 @@ func main() {
 
     netListen, error := net.Listen(tcpAddr.Network(), tcpAddr.String())
     if error != nil {
-        Log("Could not listen on address: ", error)
+        Log("Could not listen on address:", error)
         return
     }
 
