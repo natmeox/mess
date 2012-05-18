@@ -1,17 +1,12 @@
 package main
 
 import (
-    "container/list"
     "log"
     "net"
 )
 
 func main() {
     log.Println("Hello Server!")
-
-    clientList := list.New()
-    in := make(chan string)
-    go IOHandler(in, clientList)
 
     service := "localhost:9988"
     tcpAddr, error := net.ResolveTCPAddr("tcp", service)
@@ -37,6 +32,6 @@ func main() {
             continue
         }
 
-        go ClientHandler(connection, in, clientList)
+        go ClientHandler(connection)
     }
 }

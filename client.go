@@ -9,19 +9,23 @@ import (
 )
 
 type Client struct {
-    Name string
-    Incoming chan string
-    Outgoing chan string
+    ToClient chan string
+    ToServer chan string
     Conn net.Conn
     Quit chan bool
-    ClientList *list.List
+}
+
+var ClientList list.List
+
+func (c *Client) Name() string {
+    return c.Conn.RemoteAddr().String()
 }
 
 func (c *Client) Read(buffer []byte) bool {
     bytesread, error := c.Conn.Read(buffer)
     if error != nil {
         c.Close()
-        log.Println(error)
+        log.Println("Error reading from client", error)
         return false
     }
     log.Println("Read", bytesread, "bytes")
@@ -35,39 +39,21 @@ func (c *Client) Close() {
 }
 
 func (c *Client) Equal(other *Client) bool {
-    if bytes.Equal([]byte(c.Name), []byte(other.Name)) {
-        if c.Conn == other.Conn {
-            return true
-        }
-    }
-    return false
+    return c.Conn == other.Conn
 }
 
 func (c *Client) Remove() {
-    for entry := c.ClientList.Front(); entry != nil; entry = entry.Next() {
+    for entry := ClientList.Front(); entry != nil; entry = entry.Next() {
         client := entry.Value.(Client)
         if c.Equal(&client) {
-            log.Println("Removing client ", c.Name)
-            c.ClientList.Remove(entry)
-        }
-    }
-}
-
-func IOHandler(Incoming <-chan string, clientList *list.List) {
-    for {
-        log.Println("IOHandler: Waiting for input")
-        input := <-Incoming
-        log.Println("IOHandler: Handling", input)
-        for e := clientList.Front(); e != nil; e = e.Next() {
-            client := e.Value.(Client)
-            client.Incoming <- input
+            log.Println("Removing client ", c.Name())
+            ClientList.Remove(entry)
         }
     }
 }
 
 func ClientReader(client *Client) {
     buffer := make([]byte, 2048)
-
     for client.Read(buffer) {
         // Find just the text content of the buffer.
         count := bytes.IndexByte(buffer, byte(0x00))
@@ -77,14 +63,14 @@ func ClientReader(client *Client) {
         text := string(buffer[:count])
         text = strings.TrimRight(text, "\r\n")
 
+        // Let QUIT quit right up front (for now).
         if text == "QUIT" {
             client.Close()
             break
         }
 
-        log.Println("ClientReader received", client.Name, ">", text)
-        send := client.Name + "> " + text
-        client.Outgoing <- send
+        log.Println("ClientReader received", client.Name(), ">", text)
+        client.ToServer <- text
 
         // Then reset the buffer.
         for i := 0; i < 2048; i++ {
@@ -92,40 +78,30 @@ func ClientReader(client *Client) {
         }
     }
 
-    client.Outgoing <- client.Name + " has left chat"
-    log.Println("ClientReader stopped for", client.Name)
+    log.Println("ClientReader stopped for", client.Name())
 }
 
 func ClientSender(client *Client) {
     for {
         select {
-            case buffer := <-client.Incoming:
-                log.Println("ClientSender sending", buffer, "to", client.Name);
-                client.Conn.Write([]byte(buffer))
+            case text := <-client.ToClient:
+                log.Println("ClientSender sending", text, "to", client.Name());
+                client.Conn.Write([]byte(text))
                 client.Conn.Write([]byte("\n"))
 
             case <-client.Quit:
-                log.Println("Client ", client.Name, " quitting")
+                log.Println("Client", client.Name(), "quitting")
                 client.Conn.Close()
                 break  // ??
         }
     }
 }
 
-func ClientHandler(conn net.Conn, ch chan string, clientList *list.List) {
-    buffer := make([]byte, 1024)
-    bytesread, error := conn.Read(buffer)
-    if error != nil {
-        log.Println("Client connection error: ", error)
-        return
-    }
-
-    name := string(buffer[0:bytesread])
-    name = strings.TrimRight(name, "\r\n")
-    newClient := &Client{name, make(chan string), ch, conn, make(chan bool), clientList}
+func ClientHandler(conn net.Conn) {
+    newClient := &Client{make(chan string), make(chan string), conn, make(chan bool)}
+    ClientList.PushBack(newClient)
 
     go ClientSender(newClient)
     go ClientReader(newClient)
-    clientList.PushBack(*newClient)
-    ch <- string(name + " has joined the chat")
+    go Welcome(newClient)
 }
