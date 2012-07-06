@@ -8,6 +8,13 @@ import (
 func main() {
     log.Println("Hello Server!")
 
+    NewWelcomeScreen()
+    go WelcomeScreen.provideScreens()
+
+    serve()
+}
+
+func serve() {
     service := "localhost:9988"
     tcpAddr, error := net.ResolveTCPAddr("tcp", service)
     if error != nil {
@@ -32,6 +39,7 @@ func main() {
             continue
         }
 
-        go ClientHandler(connection)
+        client := NewClient(connection)
+        go WelcomeScreen.Welcome(client)
     }
 }
