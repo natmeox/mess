@@ -1,8 +1,7 @@
 package main
 
 import (
-    "bytes"
-    "container/list"
+    "bufio"
     "log"
     "net"
     "strings"
@@ -11,97 +10,82 @@ import (
 type Client struct {
     ToClient chan string
     ToServer chan string
-    Conn net.Conn
-    Quit chan bool
+
+    conn net.Conn
 }
 
-var ClientList list.List
+var clients map[net.Conn] *Client
 
-func (c *Client) Name() string {
-    return c.Conn.RemoteAddr().String()
-}
-
-func (c *Client) Read(buffer []byte) bool {
-    bytesread, error := c.Conn.Read(buffer)
-    if error != nil {
-        c.Close()
-        log.Println("Error reading from client", error)
-        return false
+func NewClient(conn net.Conn) *Client {
+    client := &Client{make(chan string), make(chan string), conn}
+    if clients == nil {
+        clients = make(map[net.Conn] *Client)
     }
-    log.Println("Read", bytesread, "bytes")
-    return true
+    clients[conn] = client
+
+    // Start the client service.
+    go client.Send()
+    go client.Read()
+
+    return client
 }
 
-func (c *Client) Close() {
-    c.Quit <- true
-    c.Conn.Close()
-    c.Remove()
+func (client *Client) Close() {
+    close(client.ToClient)
+    client.conn.Close()
+    client.Remove()
 }
 
-func (c *Client) Equal(other *Client) bool {
-    return c.Conn == other.Conn
+func (client *Client) Equal(other *Client) bool {
+    return client.conn == other.conn
 }
 
-func (c *Client) Remove() {
-    for entry := ClientList.Front(); entry != nil; entry = entry.Next() {
-        client := entry.Value.(Client)
-        if c.Equal(&client) {
-            log.Println("Removing client ", c.Name())
-            ClientList.Remove(entry)
+func (client *Client) Remove() {
+    log.Println("Removing client", client)
+    delete(clients, client.conn)
+}
+
+func (client *Client) Read() {
+    reader := bufio.NewReader(client.conn)
+    for {
+        text, error := reader.ReadString('\n')
+        if error != nil {
+            log.Println("Reading client", client, "ended with error:", error)
+            break
         }
-    }
-}
-
-func ClientReader(client *Client) {
-    buffer := make([]byte, 2048)
-    for client.Read(buffer) {
-        // Find just the text content of the buffer.
-        count := bytes.IndexByte(buffer, byte(0x00))
-        if count == -1 {
-            count = len(buffer)
-        }
-        text := string(buffer[:count])
         text = strings.TrimRight(text, "\r\n")
 
         // Let QUIT quit right up front (for now).
         if text == "QUIT" {
-            client.Close()
+            log.Println("Reading client", client, "ended due to client QUIT")
             break
         }
 
-        log.Println("ClientReader received", client.Name(), ">", text)
+        log.Println("Reading client", client, "received >", text)
         client.ToServer <- text
-
-        // Then reset the buffer.
-        for i := 0; i < 2048; i++ {
-            buffer[i] = 0x00
-        }
     }
 
-    log.Println("ClientReader stopped for", client.Name())
+    client.Close()
+    log.Println("Reader for", client, "stopped")
 }
 
-func ClientSender(client *Client) {
-    for {
-        select {
-            case text := <-client.ToClient:
-                log.Println("ClientSender sending", text, "to", client.Name());
-                client.Conn.Write([]byte(text))
-                client.Conn.Write([]byte("\n"))
+func (client *Client) Send() {
+    writer := bufio.NewWriter(client.conn)
+    for text := range client.ToClient {
+        log.Println("Sending", text, "to", client);
 
-            case <-client.Quit:
-                log.Println("Client", client.Name(), "quitting")
-                client.Conn.Close()
-                break  // ??
+        _, error := writer.WriteString(text)
+        if error == nil {
+            error = writer.WriteByte('\n')
+            if error == nil {
+                error = writer.Flush()
+            }
+        }
+        if error != nil {
+            log.Println("Sending text to", client, "failed:", error)
+            client.Close()
+            continue  // quits when ToClient is closed
         }
     }
-}
-
-func ClientHandler(conn net.Conn) {
-    newClient := &Client{make(chan string), make(chan string), conn, make(chan bool)}
-    ClientList.PushBack(newClient)
-
-    go ClientSender(newClient)
-    go ClientReader(newClient)
-    go Welcome(newClient)
+    log.Println("Sending to client", client, "quitting")
 }
