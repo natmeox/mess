@@ -7,6 +7,7 @@ import (
     "math/rand"
     "os"
     "path"
+    "strings"
     "time"
 )
 
@@ -109,7 +110,6 @@ func (screen *welcomeScreen) provideScreens() {
             screen.loadAfter = now.Add(nowSeconds + oneMinute)
         }
 
-        // TODO: we're assuming this blocks until someone wants to read one.
         screen.Screens <- screen.screenText
         log.Println("Gave that channel a welcome screen (channels love welcome screens)")
     }
@@ -119,8 +119,50 @@ func (screen *welcomeScreen) Welcome(client *Client) {
     screenText := <-screen.Screens
     client.ToClient <- screenText
 
-    for command := range client.ToServer {
-        if command == "derp" {
+    INPUT: for input := range client.ToServer {
+        parts := strings.SplitN(input, " ", 2)
+        command := strings.ToLower(parts[0])
+
+        if strings.HasPrefix("connect", command) {
+            if len(parts) > 1 {
+                parts = strings.SplitN(parts[1], " ", 2)
+            }
+            if len(parts) < 2 {
+                client.ToClient <- "An account name and password are required to connect. Try 'connect <name> <password>'."
+                continue INPUT
+            }
+
+            accountName, password := parts[0], parts[1]
+            account, error := VerifyAccount(accountName, password)
+            if error != nil {
+                client.ToClient <- "Couldn't log you in as " + accountName + ": " + error.Error()
+                continue INPUT
+            }
+
+            go Game(client, account)
+            break INPUT
+
+        } else if strings.HasPrefix("register", command) {
+
+            if len(parts) > 1 {
+                parts = strings.SplitN(parts[1], " ", 2)
+            }
+            if len(parts) < 2 {
+                client.ToClient <- "An account name and password are required to connect. Try 'register <name> <password>'."
+                continue INPUT
+            }
+
+            accountName, password := parts[0], parts[1]
+            account, error := RegisterAccount(accountName, password)
+            if error != nil {
+                client.ToClient <- "Couldn't register you as " + accountName + ": " + error.Error()
+                continue INPUT
+            }
+
+            go Game(client, account)
+            break INPUT
+
+        } else if command == "derp" {
             client.ToClient <- "DERP INDEED"
         } else if command == "herp" {
             client.ToClient <- "~herp~"
