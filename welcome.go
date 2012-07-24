@@ -162,10 +162,6 @@ func (screen *welcomeScreen) Welcome(client *Client) {
             go Game(client, account)
             break INPUT
 
-        } else if command == "derp" {
-            client.ToClient <- "DERP INDEED"
-        } else if command == "herp" {
-            client.ToClient <- "~herp~"
         } else {
             screenText := <-screen.Screens
             client.ToClient <- screenText

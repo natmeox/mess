@@ -8,6 +8,7 @@ import (
 type Account struct {
     AccountName string
     passwordHash string
+    objectId string
 }
 
 var accounts map[string] *Account = make(map[string] *Account)
@@ -28,7 +29,8 @@ func RegisterAccount (accountName string, password string) (*Account, error) {
     if err != nil {
         return nil, AuthError("Your password could not be hashed (oops?): " + err.Error())
     }
-    account := Account{accountName, passwordHash}
+    player := NewPlayer(accountName)
+    account := Account{accountName, passwordHash, player.id}
 
     accountsLock.Lock()
     defer accountsLock.Unlock()
