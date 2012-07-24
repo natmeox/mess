@@ -10,7 +10,7 @@ type Account struct {
     passwordHash string
 }
 
-var accounts map[string] *Account
+var accounts map[string] *Account = make(map[string] *Account)
 var accountsLock sync.Mutex
 
 func (account *Account) HasPassword (password string) bool {
@@ -24,10 +24,6 @@ func (err AuthError) Error() string {
 }
 
 func RegisterAccount (accountName string, password string) (*Account, error) {
-    if accounts == nil {
-        accounts = make(map[string] *Account)
-    }
-
     passwordHash, err := bcrypt.Hash(password)
     if err != nil {
         return nil, AuthError("Your password could not be hashed (oops?): " + err.Error())
@@ -47,10 +43,6 @@ func RegisterAccount (accountName string, password string) (*Account, error) {
 }
 
 func VerifyAccount (accountName string, password string) (*Account, error) {
-    if accounts == nil {
-        accounts = make(map[string] *Account)
-    }
-
     accountsLock.Lock()
     defer accountsLock.Unlock()
 

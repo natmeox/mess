@@ -14,13 +14,10 @@ type Client struct {
     conn net.Conn
 }
 
-var clients map[net.Conn] *Client
+var clients map[net.Conn] *Client = make(map[net.Conn] *Client)
 
 func NewClient(conn net.Conn) *Client {
     client := &Client{make(chan string), make(chan string), conn}
-    if clients == nil {
-        clients = make(map[net.Conn] *Client)
-    }
     clients[conn] = client
 
     // Start the client service.
