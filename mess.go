@@ -1,9 +1,19 @@
 package main
 
 import (
+    "fmt"
     "log"
     "net"
 )
+
+func assert(value bool, message string) {
+    if value {
+        return
+    }
+
+    fmt.Printf(message)
+    panic(1)
+}
 
 func main() {
     log.Println("Hello Server!")
