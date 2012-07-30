@@ -204,25 +204,23 @@ func Game(client *Client, account *Account) {
 
     INPUT: for input := range client.ToServer {
         parts := strings.SplitN(input, " ", 2)
-        if len(parts) < 2 {
-            parts[1] = ""
-        }
+
         command := strings.ToLower(parts[0])
+        var rest string
+        if len(parts) < 2 {
+            rest = ""
+        } else {
+            rest = parts[1]
+        }
 
         if command == "" {
         } else if strings.HasPrefix("whoami", command) {
             client.ToClient <- char.name
         } else if strings.HasPrefix("say", command) {
-            char.location.Say(char, parts[1])
+            char.location.Say(char, rest)
         } else if strings.HasPrefix("look", command) {
             // What does parts[1] refer to?
-            var targetName string
-            if len(parts) > 1 {
-                targetName = parts[1]
-            } else {
-                targetName = ""
-            }
-            target := IdentifyNear(targetName, char)
+            target := IdentifyNear(rest, char)
             if target == nil {
                 client.ToClient <- "I don't understand what you want to look at."
                 continue INPUT
