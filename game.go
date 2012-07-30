@@ -159,6 +159,40 @@ func (object *Object) SendClients(text string) {
     }
 }
 
+func IdentifyNear(name string, context *Object) (target *Object) {
+    if name == "" || name == "here" {
+        return context.location
+    }
+    if name == "me" || name == "this" {
+        return context
+    }
+    if strings.HasPrefix(context.location.name, name) {
+        return context.location
+    }
+    for child, _ := range context.location.contents {
+        if strings.HasPrefix(child.name, name) {
+            return child
+        }
+    }
+    return nil
+}
+
+func (target *Object) LookedAt(actor *Object) {
+    text := fmt.Sprintf("%s looks at you.", actor.name)
+    for client, _ := range target.clients {
+        client.ToClient <- text
+    }
+}
+
+func (actor *Object) LookAt(target *Object) {
+    target.LookedAt(actor)
+
+    text := fmt.Sprintf("The %s.", target.name)
+    for client, _ := range actor.clients {
+        client.ToClient <- text
+    }
+}
+
 func Game(client *Client, account *Account) {
     char := GetObject(account.objectId)
 
@@ -168,19 +202,35 @@ func Game(client *Client, account *Account) {
     }
     log.Println("Character", char.name, "connected")
 
-    for input := range client.ToServer {
+    INPUT: for input := range client.ToServer {
         parts := strings.SplitN(input, " ", 2)
+        if len(parts) < 2 {
+            parts[1] = ""
+        }
         command := strings.ToLower(parts[0])
 
         if command == "" {
-        } else if strings.HasPrefix("derp", command) {
-            client.ToClient <- "~derp~"
         } else if strings.HasPrefix("whoami", command) {
             client.ToClient <- char.name
         } else if strings.HasPrefix("say", command) {
             char.location.Say(char, parts[1])
+        } else if strings.HasPrefix("look", command) {
+            // What does parts[1] refer to?
+            var targetName string
+            if len(parts) > 1 {
+                targetName = parts[1]
+            } else {
+                targetName = ""
+            }
+            target := IdentifyNear(targetName, char)
+            if target == nil {
+                client.ToClient <- "I don't understand what you want to look at."
+                continue INPUT
+            }
+            // What's its desc?
+            char.LookAt(target)
         } else {
-            client.ToClient <- "I didn't understand what you meant by '" + command + "'."
+            client.ToClient <- "I don't understand what action you mean by '" + parts[0] + "'."
         }
     }
 

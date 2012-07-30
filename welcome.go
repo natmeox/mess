@@ -159,6 +159,7 @@ func (screen *welcomeScreen) Welcome(client *Client) {
                 continue INPUT
             }
 
+            log.Println("Beginning game for new character", accountName)
             go Game(client, account)
             break INPUT
 
@@ -167,4 +168,6 @@ func (screen *welcomeScreen) Welcome(client *Client) {
             client.ToClient <- screenText
         }
     }
+
+    log.Println("Finished welcome screen")
 }
