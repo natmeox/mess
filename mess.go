@@ -25,6 +25,9 @@ func main() {
 }
 
 func serve() {
+    InitDatabase()
+    defer CloseDatabase()
+
     service := "localhost:9988"
     tcpAddr, error := net.ResolveTCPAddr("tcp", service)
     if error != nil {

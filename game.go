@@ -8,7 +8,7 @@ import (
 )
 
 type Object struct {
-    id string
+    id uuid.UUID
     name string
     properties map[string] string
     location *Object
@@ -17,19 +17,18 @@ type Object struct {
     clients map[*Client] bool
 }
 
-var objectForId map[string] *Object = make(map[string] *Object)
+var objectForId map[uuid.UUID] *Object = make(map[uuid.UUID] *Object)
 
 var playerHome *Object = NewObject()
 
 func NewObject() (object *Object) {
-    idId, err := uuid.NewV4()
+    id, err := uuid.NewV4()
     if err != nil {
         return nil
     }
-    id := idId.String()
 
-    object = &Object{id, "object", make(map[string] string), nil, make(map[*Object] bool), make(map[*Client] bool)}
-    objectForId[id] = object
+    object = &Object{*id, "object", make(map[string] string), nil, make(map[*Object] bool), make(map[*Client] bool)}
+    objectForId[*id] = object
     return
 }
 
@@ -43,7 +42,7 @@ func NewPlayer(name string) (object *Object) {
     return
 }
 
-func GetObject(id string) (object *Object) {
+func GetObject(id uuid.UUID) (object *Object) {
     object = objectForId[id]
     if object == nil {
         // TODO: load this object from the store
