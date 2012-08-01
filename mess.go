@@ -1,6 +1,7 @@
 package main
 
 import (
+    "flag"
     "fmt"
     "log"
     "net"
@@ -25,10 +26,16 @@ func main() {
 }
 
 func serve() {
-    InitDatabase()
+    var databaseFilename string
+    var networkPort int
+
+    flag.IntVar(&networkPort, "port", 9988, "port to listen for text connections on")
+    flag.StringVar(&databaseFilename, "database", "./database", "path to the database file")
+
+    InitDatabase(databaseFilename)
     defer CloseDatabase()
 
-    service := "localhost:9988"
+    service := fmt.Sprintf("localhost:%d", networkPort)
     tcpAddr, error := net.ResolveTCPAddr("tcp", service)
     if error != nil {
         log.Println("Could not resolve address")

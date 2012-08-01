@@ -9,8 +9,8 @@ import (
 
 var db *sql.DB
 
-func InitDatabase() (err error) {
-	db, err = sql.Open("sqlite3", "./database")
+func InitDatabase(filename string) (err error) {
+	db, err = sql.Open("sqlite3", filename)
 	if err != nil {
 		return
 	}
