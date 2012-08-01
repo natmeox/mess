@@ -2,9 +2,9 @@ package main
 
 import (
 	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 	"io/ioutil"
 	"log"
-	_ "github.com/mattn/go-sqlite3"
 	"strings"
 )
 
@@ -45,5 +45,5 @@ func CloseDatabase() {
 		return
 	}
 	db.Close()
-	db = nil;
+	db = nil
 }
