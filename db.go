@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	_ "github.com/mattn/go-sqlite3"
+	"strings"
 )
 
 var db *sql.DB
@@ -26,8 +27,16 @@ func InitDatabase(filename string) (err error) {
 	if err != nil {
 		return
 	}
+	schemaSql := string(schemaBytes)
+	schemaStatements := strings.Split(schemaSql, ";\n")
 
-	_, err = db.Exec(string(schemaBytes))
+	for _, schemaStatement := range schemaStatements {
+		_, err = db.Exec(schemaStatement)
+		if err != nil {
+			return
+		}
+	}
+
 	return
 }
 
