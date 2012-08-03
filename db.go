@@ -31,9 +31,15 @@ func InitDatabase(filename string) (err error) {
 	schemaStatements := strings.Split(schemaSql, ";\n")
 
 	for _, schemaStatement := range schemaStatements {
+		schemaStatement = strings.TrimSpace(schemaStatement)
+		if schemaStatement == "" {
+			continue
+		}
+
 		_, err = db.Exec(schemaStatement)
 		if err != nil {
-			return
+			log.Println("sqlite error executing sql:", schemaStatement)
+			break
 		}
 	}
 
