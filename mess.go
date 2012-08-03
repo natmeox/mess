@@ -32,7 +32,11 @@ func serve() {
 	flag.IntVar(&networkPort, "port", 9988, "port to listen for text connections on")
 	flag.StringVar(&databaseFilename, "database", "./database", "path to the database file")
 
-	InitDatabase(databaseFilename)
+	err := InitDatabase(databaseFilename)
+	if err != nil {
+		log.Println("Error initializing database:", err.Error())
+		panic(1)
+	}
 	defer CloseDatabase()
 
 	service := fmt.Sprintf("localhost:%d", networkPort)
