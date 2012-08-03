@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	uuid "github.com/nu7hatch/gouuid"
 	"log"
@@ -11,32 +12,27 @@ type Object struct {
 	id         uuid.UUID
 	name       string
 	properties map[string]string
-	location   *Object
-	contents   map[*Object]bool
+	location   uuid.UUID
+	contents   map[uuid.UUID]bool
 
 	clients map[*Client]bool
 }
 
 var objectForId map[uuid.UUID]*Object = make(map[uuid.UUID]*Object)
 
-var playerHome *Object = NewObject()
-
-func NewObject() (object *Object) {
+func NewObject(name string) (object *Object) {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return nil
 	}
 
-	object = &Object{*id, "object", make(map[string]string), nil, make(map[*Object]bool), make(map[*Client]bool)}
+	object = &Object{*id, name, make(map[string]string), uuid.UUID([16]byte{}), make(map[uuid.UUID]bool), make(map[*Client]bool)}
 	objectForId[*id] = object
 	return
 }
 
 func NewPlayer(name string) (object *Object) {
-	object = NewObject()
-	object.name = name
-
-	object.MoveTo(playerHome)
+	object = NewObject(name)
 
 	log.Println("New character", name, "created")
 	return
@@ -44,23 +40,73 @@ func NewPlayer(name string) (object *Object) {
 
 func GetObject(id uuid.UUID) (object *Object) {
 	object = objectForId[id]
-	if object == nil {
-		// TODO: load this object from the store
+	if object != nil {
+		log.Println("Found object", id, "already loaded, returning", object)
+		return object
 	}
+
+	object, err := LoadObject(id)
+	if err != nil {
+		log.Println("Could not load object", id, err.Error())
+		panic(1)
+	}
+	if object == nil {
+		log.Println("ZOMG COULD NOT LOAD OBJ", id, "BUT NO ERR")
+		panic(1)
+	}
+
+	objectForId[id] = object
+	return object
+}
+
+func LoadObject(id uuid.UUID) (object *Object, err error) {
+	log.Println("Loading object", id, "from database")
+
+	rows, err := db.Query("select name, location from object where id = ? limit 1", id[0:16])
+	if err != nil {
+		return nil, err
+	}
+
+	var name string
+	var location [16]byte
+	if rows.Next() {
+		rows.Scan(&name, &location)
+		object = &Object{id, name, make(map[string]string), uuid.UUID(location), make(map[uuid.UUID]bool), make(map[*Client]bool)}
+	} else {
+		return nil, sql.ErrNoRows
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+	log.Println("Yay, created", id, "object", object)
+
+	rows, err = db.Query("select id from object where location = ?", id[0:16])
+	if err != nil {
+		return nil, err
+	}
+
+	var childId [16]byte
+	for rows.Next() {
+		rows.Scan(&childId)
+		object.contents[uuid.UUID(childId)] = true
+	}
+	log.Println("Yay yay, filled in", id, "contents too")
+
 	return
 }
 
 func (actor *Object) MoveTo(target *Object) {
-	// TODO: erm... this should happen pretty atomically?
-	if actor.location != nil {
-		actor.location.Departed(actor, actor.location)
-
-		delete(actor.location.contents, actor)
+	if actor.location == target.id {
+		return
 	}
 
-	actor.location = target
+	oldLocation := GetObject(actor.location)
+	oldLocation.Departed(actor, oldLocation)
+	delete(oldLocation.contents, actor.id)
 
-	target.contents[actor] = true
+	actor.location = target.id
+
+	target.contents[actor.id] = true
 	target.Arrived(actor, target)
 }
 
@@ -69,8 +115,9 @@ func (object *Object) Connected(actor *Object) {
 		return // you know you connected
 	}
 
-	if object.contents[actor] {
-		for child, _ := range object.contents {
+	if object.contents[actor.id] {
+		for childId, _ := range object.contents {
+			child := GetObject(childId)
 			child.Connected(actor)
 		}
 	}
@@ -86,8 +133,9 @@ func (object *Object) Disconnected(actor *Object) {
 		return // you know you disconnected
 	}
 
-	if object.contents[actor] {
-		for child, _ := range object.contents {
+	if object.contents[actor.id] {
+		for childId, _ := range object.contents {
+			child := GetObject(childId)
 			child.Disconnected(actor)
 		}
 	}
@@ -100,7 +148,8 @@ func (object *Object) Disconnected(actor *Object) {
 
 func (object *Object) Departed(actor *Object, target *Object) {
 	if target == object {
-		for child, _ := range target.contents {
+		for childId, _ := range target.contents {
+			child := GetObject(childId)
 			child.Departed(actor, target)
 		}
 	}
@@ -117,7 +166,8 @@ func (object *Object) Departed(actor *Object, target *Object) {
 
 func (object *Object) Arrived(actor *Object, target *Object) {
 	if target == object {
-		for child, _ := range target.contents {
+		for childId, _ := range target.contents {
+			child := GetObject(childId)
 			child.Arrived(actor, target)
 		}
 	}
@@ -134,8 +184,9 @@ func (object *Object) Arrived(actor *Object, target *Object) {
 }
 
 func (object *Object) Say(actor *Object, message string) {
-	if object.contents[actor] {
-		for child, _ := range object.contents {
+	if object.contents[actor.id] {
+		for childId, _ := range object.contents {
+			child := GetObject(childId)
 			child.Say(actor, message)
 		}
 	}
@@ -159,16 +210,18 @@ func (object *Object) SendClients(text string) {
 }
 
 func IdentifyNear(name string, context *Object) (target *Object) {
-	if name == "" || name == "here" {
-		return context.location
-	}
 	if name == "me" || name == "this" {
 		return context
 	}
-	if strings.HasPrefix(context.location.name, name) {
-		return context.location
+	contextLocation := GetObject(context.location)
+	if name == "" || name == "here" {
+		return contextLocation
 	}
-	for child, _ := range context.location.contents {
+	if strings.HasPrefix(contextLocation.name, name) {
+		return contextLocation
+	}
+	for childId, _ := range contextLocation.contents {
+		child := GetObject(childId)
 		if strings.HasPrefix(child.name, name) {
 			return child
 		}
@@ -197,7 +250,12 @@ func Game(client *Client, account *Account) {
 
 	char.clients[client] = true
 	if len(char.clients) <= 1 {
-		char.location.Connected(char)
+		loc := GetObject(char.location)
+		if loc == nil {
+			log.Println("ZOMG OBJ FOR", char.location, "IS NULZL")
+			panic(1)
+		}
+		loc.Connected(char)
 	}
 	log.Println("Character", char.name, "connected")
 
@@ -217,7 +275,7 @@ INPUT:
 		} else if strings.HasPrefix("whoami", command) {
 			client.ToClient <- char.name
 		} else if strings.HasPrefix("say", command) {
-			char.location.Say(char, rest)
+			GetObject(char.location).Say(char, rest)
 		} else if strings.HasPrefix("look", command) {
 			// What does parts[1] refer to?
 			target := IdentifyNear(rest, char)
@@ -234,7 +292,7 @@ INPUT:
 
 	log.Println("Character", char.name, "disconnected")
 	if len(char.clients) <= 1 {
-		char.location.Disconnected(char)
+		GetObject(char.location).Disconnected(char)
 	}
 	delete(char.clients, client)
 }
