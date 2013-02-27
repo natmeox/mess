@@ -1,21 +1,14 @@
-package mess
+package main
 
 import (
 	_ "database/sql"
 	"encoding/json"
 	"flag"
-	"fmt"
 	_ "github.com/bmizerany/pq"
+	"github.com/natmeox/mess"
 	"log"
 	"os"
 )
-
-type ConfigStash struct {
-	Dsn  string
-	Port uint16
-}
-
-var Config ConfigStash
 
 func main() {
 	var configPath string
@@ -27,11 +20,11 @@ func main() {
 		return
 	}
 	dec := json.NewDecoder(configFile)
-	err = dec.Decode(&Config)
+	err = dec.Decode(&mess.Config)
 	if err != nil {
 		log.Println("Error decoding configuration:", err)
 		return
 	}
 
-	Server()
+	mess.Server()
 }

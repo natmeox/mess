@@ -1,10 +1,18 @@
 package mess
 
 import (
+	"fmt"
+	"log"
 	"net"
 )
 
+var Config struct {
+	Dsn  string
+	Port uint16
+}
+
 func Server() {
+	log.Println("Listening at port", Config.Port)
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", Config.Port))
 	if err != nil {
 		log.Println("Error listening for connections:", err)
@@ -19,7 +27,7 @@ func Server() {
 			continue
 		}
 
-		client := NewClient(conn)
-		conn.Close()
+		client := NewClientPump(conn)
+		go WelcomeClient(client)
 	}
 }
