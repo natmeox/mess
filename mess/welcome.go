@@ -70,7 +70,7 @@ func loadWelcomeScreen() (string, error) {
 }
 
 func WelcomeConnect(client *ClientPump, rest string) (endWelcome bool) {
-	parts := strings.Split(rest, " ", 2)
+	parts := strings.SplitN(rest, " ", 2)
 	if len(parts) < 2 {
 		client.ToClient <- "To connect, type: connect name password"
 		return false
@@ -93,6 +93,23 @@ func WelcomeConnect(client *ClientPump, rest string) (endWelcome bool) {
 	return true
 }
 
+func WelcomeRegister(client *ClientPump, rest string) {
+	parts := strings.SplitN(rest, " ", 2)
+	if len(parts) < 2 {
+		client.ToClient <- "To register, type: register name password"
+		return
+	}
+	name, password := parts[0], parts[1]
+
+	account := CreateAccount(name, password)
+	if account == nil {
+		client.ToClient <- "Oops, we were unable to register you with that name."
+		return
+	}
+
+	client.ToClient <- "Yay, you were successfully registered. Type 'connect name password' to connect!"
+}
+
 func WelcomeClient(client *ClientPump) {
 	screen, err := loadWelcomeScreen()
 	if err != nil {
@@ -104,8 +121,8 @@ func WelcomeClient(client *ClientPump) {
 		parts := strings.SplitN(input, " ", 2)
 		command := strings.ToLower(parts[0])
 		rest := ""
-		if len(parts > 1) {
-			rest := parts[1]
+		if len(parts) > 1 {
+			rest = parts[1]
 		}
 
 		switch command {
@@ -113,6 +130,8 @@ func WelcomeClient(client *ClientPump) {
 			if WelcomeConnect(client, rest) {
 				return
 			}
+		case "register":
+			WelcomeRegister(client, rest)
 		case "quit":
 			client.ToClient <- "Thanks for spending time with the mess today!"
 			close(client.ToClient)

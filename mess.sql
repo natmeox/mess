@@ -1,7 +1,7 @@
 CREATE TABLE character (
-    id INTEGER PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    description TEXT NOT NULL
+    description TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE account (
