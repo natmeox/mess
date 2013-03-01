@@ -1,14 +1,14 @@
-CREATE TABLE account (
-    loginname TEXT NOT NULL PRIMARY KEY,
-    passwordhash TEXT NOT NULL,
-    character INTEGER NOT NULL REFERENCES character,
-    created TIMESTAMP NOT NULL DEFAULT NOW() AT TIME ZONE 'UTC'
-);
-
 CREATE TABLE character (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT NOT NULL
+);
+
+CREATE TABLE account (
+    loginname TEXT NOT NULL PRIMARY KEY,
+    passwordhash TEXT NOT NULL,
+    character INTEGER NOT NULL REFERENCES character,
+    created TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 CREATE TABLE room (
@@ -16,7 +16,7 @@ CREATE TABLE room (
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     creator INTEGER NOT NULL REFERENCES character,
-    created TIMESTAMP NOT NULL DEFAULT NOW() AT TIME ZONE 'UTC'
+    created TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 CREATE TABLE exit (

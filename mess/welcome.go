@@ -69,6 +69,30 @@ func loadWelcomeScreen() (string, error) {
 	return "", err
 }
 
+func WelcomeConnect(client *ClientPump, rest string) (endWelcome bool) {
+	parts := strings.Split(rest, " ", 2)
+	if len(parts) < 2 {
+		client.ToClient <- "To connect, type: connect name password"
+		return false
+	}
+	name, password := parts[0], parts[1]
+
+	// TODO: eventually connections should be made through a front-end that talks to a service, so the service can be restarted independently of the front-end. This would be very different.
+
+	account := AccountForLogin(name, password)
+	if account == nil {
+		client.ToClient <- "Hmm, there doesn't appear to be an account with that name and password."
+		return false
+	}
+
+	log.Println("Someone connected as", account.LoginName, "!")
+
+	// TODO: start up the game routine
+	close(client.ToClient)
+
+	return true
+}
+
 func WelcomeClient(client *ClientPump) {
 	screen, err := loadWelcomeScreen()
 	if err != nil {
@@ -79,14 +103,22 @@ func WelcomeClient(client *ClientPump) {
 	for input := range client.ToServer {
 		parts := strings.SplitN(input, " ", 2)
 		command := strings.ToLower(parts[0])
-		if command == "connect" {
-			name := parts[1]
-			// hurf
-			client.ToClient <- "YAY CONNECTED AS " + name + " okay bye"
-			close(client.ToClient)
-			return
+		rest := ""
+		if len(parts > 1) {
+			rest := parts[1]
 		}
 
-		client.ToClient <- screen
+		switch command {
+		case "connect":
+			if WelcomeConnect(client, rest) {
+				return
+			}
+		case "quit":
+			client.ToClient <- "Thanks for spending time with the mess today!"
+			close(client.ToClient)
+			return
+		default:
+			client.ToClient <- screen
+		}
 	}
 }
