@@ -88,7 +88,7 @@ func WelcomeConnect(client *ClientPump, rest string) (endWelcome bool) {
 	log.Println("Someone connected as", account.LoginName, "!")
 
 	// TODO: start up the game routine
-	close(client.ToClient)
+	go GameClient(client, account)
 
 	return true
 }

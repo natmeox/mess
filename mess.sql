@@ -12,7 +12,7 @@ CREATE TABLE account (
 );
 
 CREATE TABLE room (
-    id INTEGER PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     creator INTEGER NOT NULL REFERENCES character,
@@ -23,9 +23,4 @@ CREATE TABLE exit (
     command TEXT NOT NULL,
     fromroom INTEGER NOT NULL REFERENCES room,
     toroom INTEGER NOT NULL REFERENCES room
-);
-
-CREATE TABLE characterroom (
-    character INTEGER NOT NULL UNIQUE REFERENCES character,
-    room INTEGER NOT NULL REFERENCES room
 );

@@ -21,6 +21,8 @@ func OpenDatabase() (err error) {
 }
 
 func Server() {
+	GameInit()
+
 	err := OpenDatabase()
 	if err != nil {
 		log.Println("Error connecting to database:", err)
