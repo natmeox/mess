@@ -9,11 +9,11 @@ import (
 )
 
 type Room struct {
-	Id int
-	Name string
+	Id          int
+	Name        string
 	Description string
-	Creator int
-	Created time.Time
+	Creator     int
+	Created     time.Time
 
 	Characters []*Character
 }
@@ -24,12 +24,12 @@ var RoomForId struct {
 }
 
 type Character struct {
-	Id int
-	Name string
+	Id          int
+	Name        string
 	Description string
 
 	Client *ClientPump
-	Room *Room
+	Room   *Room
 }
 
 var CharacterForId struct {
@@ -125,7 +125,7 @@ func (char *Character) Move(room *Room) {
 func (room *Room) CharLeft(char *Character) {
 	log.Println("Telling room", room, room.Name, "that character", char, char.Name, "is leaving.")
 	text := fmt.Sprintf("%s left.", char.Name)
-	for _, otherChar:= range room.Characters {
+	for _, otherChar := range room.Characters {
 		otherChar.Client.ToClient <- text
 	}
 }
@@ -197,16 +197,16 @@ func GameClient(client *ClientPump, account *Account) {
 		}
 
 		switch command {
-			case "quit":
-				client.ToClient <- "Thanks for spending time with the mess today!"
-				close(client.ToClient)
-				break
-			case "look":
-				GameLook(client, char, rest)
-			case "say":
-				GameSay(client, char, rest)
-			default:
-				client.ToClient <- fmt.Sprintf("Oops, not sure what you mean by \"%s\".", command)
+		case "quit":
+			client.ToClient <- "Thanks for spending time with the mess today!"
+			close(client.ToClient)
+			break
+		case "look":
+			GameLook(client, char, rest)
+		case "say":
+			GameSay(client, char, rest)
+		default:
+			client.ToClient <- fmt.Sprintf("Oops, not sure what you mean by \"%s\".", command)
 		}
 	}
 
