@@ -10,6 +10,7 @@ import (
 var Config struct {
 	Dsn         string
 	GameAddress string
+	WebAddress  string
 }
 
 var Db *sql.DB
@@ -27,6 +28,8 @@ func Server() {
 		log.Println("Error connecting to database:", err)
 		return
 	}
+
+	go StartWeb()
 
 	// TODO: listen on an SSL port too
 	log.Println("Listening at address", Config.GameAddress)
