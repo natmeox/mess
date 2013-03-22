@@ -2,15 +2,14 @@ package mess
 
 import (
 	"database/sql"
-	"fmt"
 	_ "github.com/bmizerany/pq"
 	"log"
 	"net"
 )
 
 var Config struct {
-	Dsn  string
-	Port uint16
+	Dsn         string
+	GameAddress string
 }
 
 var Db *sql.DB
@@ -30,8 +29,8 @@ func Server() {
 	}
 
 	// TODO: listen on an SSL port too
-	log.Println("Listening at port", Config.Port)
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", Config.Port))
+	log.Println("Listening at address", Config.GameAddress)
+	listener, err := net.Listen("tcp", Config.GameAddress)
 	if err != nil {
 		log.Println("Error listening for connections:", err)
 		return
