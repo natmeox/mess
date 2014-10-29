@@ -14,11 +14,24 @@ type Account struct {
 	Created      time.Time
 }
 
+func GetAccount(name string) (acc *Account) {
+	acc = &Account{}
+	row := Db.QueryRow("SELECT loginname, character, created FROM account WHERE loginname = $1",
+		name)
+	err := row.Scan(&acc.LoginName, &acc.Character, &acc.Created)
+	if err != nil {
+		log.Println("Error loading account with name", name, ":", err)
+		return nil
+	}
+	return
+}
+
 func AccountForLogin(name, password string) (acc *Account) {
 	acc = &Account{}
 	row := Db.QueryRow("SELECT loginname, passwordhash, character, created FROM account WHERE loginname = $1",
 		name)
 	err := row.Scan(&acc.LoginName, &acc.PasswordHash, &acc.Character, &acc.Created)
+	// TODO: oh look there are timing attacks wheeeeeeee
 	if err != nil {
 		thing, ok := err.(pq.PGError)
 		var message string
@@ -46,23 +59,22 @@ func CreateAccount(name, password string) (acc *Account) {
 		return nil
 	}
 
+	origin := World.ThingForId(1)
+	char := World.CreateThing(name, origin, origin)
+	if char == nil {
+		log.Println("Couldn't create character to create an account")
+		return nil
+	}
+
 	tx, err := Db.Begin()
 	if err != nil {
 		log.Println("Couldn't open transaction to create an account:", err.Error())
 		return nil
 	}
 
-	acc = &Account{name, passwordHash, 0, time.Unix(0, 0)}
-	row := tx.QueryRow("INSERT INTO character (name, description) VALUES ($1, $2) RETURNING id",
-		name, "")
-	err = row.Scan(&acc.Character)
-	if err != nil {
-		log.Println("Couldn't create character for new account:", err.Error())
-		tx.Rollback()
-		return nil
-	}
+	acc = &Account{name, passwordHash, char.Id, time.Unix(0, 0)}
 
-	row = tx.QueryRow("INSERT INTO account (loginname, passwordhash, character) VALUES ($1, $2, $3) RETURNING created",
+	row := tx.QueryRow("INSERT INTO account (loginname, passwordhash, character) VALUES ($1, $2, $3) RETURNING created",
 		name, passwordHash, acc.Character)
 	err = row.Scan(&acc.Created)
 	if err != nil {

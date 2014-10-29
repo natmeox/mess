@@ -1,26 +1,21 @@
-CREATE TABLE character (
+CREATE TABLE thing (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    description TEXT NOT NULL DEFAULT ''
+    description TEXT NOT NULL DEFAULT '',
+    creator INTEGER NOT NULL REFERENCES thing DEFERRABLE INITIALLY DEFERRED,
+    created TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    parent INTEGER REFERENCES thing
 );
 
 CREATE TABLE account (
     loginname TEXT NOT NULL PRIMARY KEY,
     passwordhash TEXT NOT NULL,
-    character INTEGER NOT NULL REFERENCES character,
-    created TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC')
-);
-
-CREATE TABLE room (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT NOT NULL,
-    creator INTEGER NOT NULL REFERENCES character,
+    character INTEGER NOT NULL REFERENCES thing,
     created TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 CREATE TABLE exit (
     command TEXT NOT NULL,
-    fromroom INTEGER NOT NULL REFERENCES room,
-    toroom INTEGER NOT NULL REFERENCES room
+    source INTEGER NOT NULL REFERENCES thing,
+    target INTEGER NOT NULL REFERENCES thing
 );
