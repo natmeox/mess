@@ -1,12 +1,31 @@
 package mess
 
 import (
+	"github.com/gorilla/sessions"
 	"html/template"
 	"log"
 	"net/http"
 )
 
+var store *sessions.CookieStore
+
+func AccountForRequest(w http.ResponseWriter, r *http.Request) *Account {
+	session, _ := store.Get(r, "session")
+	accountNameValue, ok := session.Values["name"]
+	if !ok {
+		return nil
+	}
+	accountName, ok := accountNameValue.(string)
+	if !ok {
+		return nil
+	}
+
+	return GetAccount(accountName)
+}
+
 func StartWeb() {
+	store = sessions.NewCookieStore([]byte(Config.CookieSecret))
+
 	staticServer := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", staticServer))
 
@@ -16,12 +35,14 @@ func StartWeb() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		acc := AccountForRequest(w, r) // might be nil
+
 		if r.URL.String() != "/" {
 			http.NotFound(w, r)
 			return
 		}
 
-		err := indexTemplate.Execute(w, nil)
+		err := indexTemplate.Execute(w, map[string]interface{}{"account": acc})
 		if err != nil {
 			log.Println("Error executing index.html template:", err.Error())
 		}

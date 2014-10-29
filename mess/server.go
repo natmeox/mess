@@ -8,9 +8,10 @@ import (
 )
 
 var Config struct {
-	Dsn         string
-	GameAddress string
-	WebAddress  string
+	Dsn          string
+	GameAddress  string
+	WebAddress   string
+	CookieSecret string
 }
 
 var Db *sql.DB
