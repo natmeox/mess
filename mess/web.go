@@ -3,6 +3,7 @@ package mess
 import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
+	"github.com/justinas/nosurf"
 	"html/template"
 	"log"
 	"net/http"
@@ -113,6 +114,7 @@ func StartWeb() {
 
 		signinTemplate := GetTemplate("signin.html")
 		err := signinTemplate.Execute(w, map[string]interface{}{
+			"CsrfToken": nosurf.Token(r),
 			"Title": "Sign in",
 		})
 		if err != nil {
@@ -152,6 +154,6 @@ func StartWeb() {
 	})))
 
 	log.Println("Listening for web requests at address", Config.WebAddress)
-	webHandler := context.ClearHandler(http.DefaultServeMux)
+	webHandler := context.ClearHandler(nosurf.New(http.DefaultServeMux))
 	http.ListenAndServe(Config.WebAddress, webHandler)
 }
