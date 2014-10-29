@@ -69,14 +69,14 @@ func StartWeb() {
 		GetTemplate = LookupTemplate
 	}
 
-	RequireAccount := func (h http.Handler) http.Handler {
+	RequireAccount := func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			acc := AccountForRequest(w, r)
 			if acc == nil {
 				v := url.Values{}
 				v.Set("next", r.URL.RequestURI())
 				signinUrl := url.URL{
-					Path: "/signin",
+					Path:     "/signin",
 					RawQuery: v.Encode(),
 				}
 
@@ -115,7 +115,7 @@ func StartWeb() {
 		signinTemplate := GetTemplate("signin.html")
 		err := signinTemplate.Execute(w, map[string]interface{}{
 			"CsrfToken": nosurf.Token(r),
-			"Title": "Sign in",
+			"Title":     "Sign in",
 		})
 		if err != nil {
 			log.Println("Error executing signin.html template:", err.Error())
@@ -145,7 +145,7 @@ func StartWeb() {
 
 		indexTemplate := GetTemplate("index.html")
 		err := indexTemplate.Execute(w, map[string]interface{}{
-			"Title": "Hi",
+			"Title":   "Hi",
 			"Account": acc,
 		})
 		if err != nil {
