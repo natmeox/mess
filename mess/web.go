@@ -1,6 +1,7 @@
 package mess
 
 import (
+	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 	"html/template"
 	"log"
@@ -66,13 +67,6 @@ func StartWeb() {
 	} else {
 		GetTemplate = LookupTemplate
 	}
-
-	/*
-		TODO: gorilla/sessions docs say:
-
-			Important Note: If you aren't using gorilla/mux, you need to wrap
-			your handlers with context.ClearHandler as or else you will leak memory!
-	 */
 
 	RequireAccount := func (h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -158,5 +152,6 @@ func StartWeb() {
 	})))
 
 	log.Println("Listening for web requests at address", Config.WebAddress)
-	http.ListenAndServe(Config.WebAddress, nil)
+	webHandler := context.ClearHandler(http.DefaultServeMux)
+	http.ListenAndServe(Config.WebAddress, webHandler)
 }
