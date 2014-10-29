@@ -8,6 +8,7 @@ import (
 )
 
 var Config struct {
+	Debug        bool
 	Dsn          string
 	GameAddress  string
 	WebAddress   string
