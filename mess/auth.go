@@ -65,8 +65,8 @@ func (w *DatabaseWorld) CreateAccount(name, password string) (acc *Account) {
 		return nil
 	}
 
-	origin := w.ThingForId(1)
-	char := w.CreateThing(name, origin, origin)
+	origin := World.ThingForId(1)
+	char := World.CreateThing(name, origin, origin)
 	if char == nil {
 		log.Println("Couldn't create character to create an account")
 		return nil
