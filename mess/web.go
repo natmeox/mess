@@ -10,9 +10,7 @@ import (
 	"net/url"
 )
 
-var (
-	store *sessions.CookieStore
-)
+var store *sessions.CookieStore
 
 func AccountForRequest(w http.ResponseWriter, r *http.Request) *Account {
 	session, _ := store.Get(r, "session")
