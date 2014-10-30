@@ -20,12 +20,20 @@ type Thing struct {
 }
 
 var World WorldStore
+var Accounts AccountStore
 
 func GameInit() {
+	db, err := OpenDatabase()
+	if err != nil {
+		log.Println("Error connecting to database:", err)
+		return
+	}
+
 	World = &ActiveWorld{
 		Things: make(map[int]*Thing),
-		Next:   &DatabaseWorld{},
+		Next:   db,
 	}
+	Accounts = db
 }
 
 func Identify(source *Thing, name string) *Thing {

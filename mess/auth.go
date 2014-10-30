@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+type AccountStore interface {
+	AccountForLogin(name, password string) (acc *Account)
+	CreateAccount(name, password string) (acc *Account)
+	GetAccount(name string) (acc *Account)
+}
+
 type Account struct {
 	LoginName    string
 	PasswordHash string
@@ -14,9 +20,9 @@ type Account struct {
 	Created      time.Time
 }
 
-func GetAccount(name string) (acc *Account) {
+func (w *DatabaseWorld) GetAccount(name string) (acc *Account) {
 	acc = &Account{}
-	row := Db.QueryRow("SELECT loginname, character, created FROM account WHERE loginname = $1",
+	row := w.db.QueryRow("SELECT loginname, character, created FROM account WHERE loginname = $1",
 		name)
 	err := row.Scan(&acc.LoginName, &acc.Character, &acc.Created)
 	if err != nil {
@@ -26,9 +32,9 @@ func GetAccount(name string) (acc *Account) {
 	return
 }
 
-func AccountForLogin(name, password string) (acc *Account) {
+func (w *DatabaseWorld) AccountForLogin(name, password string) (acc *Account) {
 	acc = &Account{}
-	row := Db.QueryRow("SELECT loginname, passwordhash, character, created FROM account WHERE loginname = $1",
+	row := w.db.QueryRow("SELECT loginname, passwordhash, character, created FROM account WHERE loginname = $1",
 		name)
 	err := row.Scan(&acc.LoginName, &acc.PasswordHash, &acc.Character, &acc.Created)
 	// TODO: oh look there are timing attacks wheeeeeeee
@@ -52,7 +58,7 @@ func AccountForLogin(name, password string) (acc *Account) {
 	return
 }
 
-func CreateAccount(name, password string) (acc *Account) {
+func (w *DatabaseWorld) CreateAccount(name, password string) (acc *Account) {
 	passwordHash, err := bcrypt.Hash(password)
 	if err != nil {
 		log.Println("Couldn't hash password to create an account:", err.Error())
@@ -66,7 +72,7 @@ func CreateAccount(name, password string) (acc *Account) {
 		return nil
 	}
 
-	tx, err := Db.Begin()
+	tx, err := w.db.Begin()
 	if err != nil {
 		log.Println("Couldn't open transaction to create an account:", err.Error())
 		return nil
