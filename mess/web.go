@@ -12,6 +12,10 @@ import (
 
 var store *sessions.CookieStore
 
+type key int
+
+const ContextKeyAccount key = 0
+
 func AccountForRequest(w http.ResponseWriter, r *http.Request) *Account {
 	session, _ := store.Get(r, "session")
 	accountNameValue, ok := session.Values["name"]
@@ -84,8 +88,12 @@ func StartWeb() {
 				return
 			}
 
+			context.Set(r, ContextKeyAccount, acc)
 			h.ServeHTTP(w, r)
 		})
+	}
+	RequireAccountFunc := func(f func(w http.ResponseWriter, r *http.Request)) http.Handler {
+		return RequireAccount(http.HandlerFunc(f))
 	}
 
 	http.HandleFunc("/signin", func(w http.ResponseWriter, r *http.Request) {
@@ -135,17 +143,19 @@ func StartWeb() {
 		}
 	})
 
-	http.Handle("/", RequireAccount(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	http.Handle("/", RequireAccountFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.String() != "/" {
 			http.NotFound(w, r)
 			return
 		}
 
-		acc := AccountForRequest(w, r) // might be nil
+		acc := context.Get(r, ContextKeyAccount)
 
 		indexTemplate := GetTemplate("index.html")
 		err := indexTemplate.Execute(w, map[string]interface{}{
 			"Title":   "Home",
+
+			"CsrfToken": nosurf.Token(r),
 			"Config":  map[string]interface{}{
 				"Debug": Config.Debug,
 				"ServiceName": Config.ServiceName,
@@ -156,7 +166,7 @@ func StartWeb() {
 		if err != nil {
 			log.Println("Error executing index.html template:", err.Error())
 		}
-	})))
+	}))
 
 	log.Println("Listening for web requests at address", Config.WebAddress)
 	webHandler := context.ClearHandler(nosurf.New(http.DefaultServeMux))
