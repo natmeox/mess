@@ -145,7 +145,12 @@ func StartWeb() {
 
 		indexTemplate := GetTemplate("index.html")
 		err := indexTemplate.Execute(w, map[string]interface{}{
-			"Title":   "Hi",
+			"Title":   "Home",
+			"Config":  map[string]interface{}{
+				"Debug": Config.Debug,
+				"ServiceName": Config.ServiceName,
+				"HostName": Config.HostName,
+			},
 			"Account": acc,
 		})
 		if err != nil {

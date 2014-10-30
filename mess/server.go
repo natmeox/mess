@@ -9,6 +9,8 @@ import (
 
 var Config struct {
 	Debug        bool
+	ServiceName  string
+	HostName     string
 	Dsn          string
 	GameAddress  string
 	WebAddress   string
