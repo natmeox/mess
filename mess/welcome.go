@@ -79,7 +79,7 @@ func WelcomeConnect(client *ClientPump, rest string) (endWelcome bool) {
 
 	// TODO: eventually connections should be made through a front-end that talks to a service, so the service can be restarted independently of the front-end. This would be very different.
 
-	account := AccountForLogin(name, password)
+	account := Accounts.AccountForLogin(name, password)
 	if account == nil {
 		client.ToClient <- "Hmm, there doesn't appear to be an account with that name and password."
 		return false
@@ -101,7 +101,7 @@ func WelcomeRegister(client *ClientPump, rest string) {
 	}
 	name, password := parts[0], parts[1]
 
-	account := CreateAccount(name, password)
+	account := Accounts.CreateAccount(name, password)
 	if account == nil {
 		client.ToClient <- "Oops, we were unable to register you with that name."
 		return

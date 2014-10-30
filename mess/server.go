@@ -15,21 +15,16 @@ var Config struct {
 	CookieSecret string
 }
 
-var Db *sql.DB
-
-func OpenDatabase() (err error) {
-	Db, err = sql.Open("postgres", Config.Dsn)
-	return
+func OpenDatabase() (*DatabaseWorld, error) {
+	db, err := sql.Open("postgres", Config.Dsn)
+	if err != nil {
+		return nil, err
+	}
+	return &DatabaseWorld{db}, nil
 }
 
 func Server() {
 	GameInit()
-
-	err := OpenDatabase()
-	if err != nil {
-		log.Println("Error connecting to database:", err)
-		return
-	}
 
 	go StartWeb()
 

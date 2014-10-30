@@ -8,18 +8,19 @@ import (
 
 type WorldStore interface {
 	ThingForId(id int) *Thing
-	CreateThing(name string, creator *Thing, parent *Thing) *Thing
+	CreateThing(name string, creator *Thing, parent *Thing) (thing *Thing)
 	MoveThing(thing *Thing, target *Thing) (ok bool)
 }
 
 type DatabaseWorld struct {
+	db *sql.DB
 }
 
 func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 	thing = &Thing{}
 	thing.Id = id
 
-	row := Db.QueryRow("SELECT name, description, creator, created, parent FROM thing WHERE id = $1",
+	row := w.db.QueryRow("SELECT name, description, creator, created, parent FROM thing WHERE id = $1",
 		id)
 	var parent sql.NullInt64
 	err := row.Scan(&thing.Name, &thing.Description, &thing.Creator, &thing.Created, &parent)
@@ -33,7 +34,7 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 
 	thing.Contents = make([]int, 0, 2)
 
-	rows, err := Db.Query("SELECT id FROM thing WHERE parent = $1", id)
+	rows, err := w.db.Query("SELECT id FROM thing WHERE parent = $1", id)
 	if err != nil {
 		log.Println("Error finding contents", id, ":", err.Error())
 		return nil
@@ -65,7 +66,7 @@ func (w *DatabaseWorld) CreateThing(name string, creator *Thing, parent *Thing) 
 		Contents:    make([]int, 0),
 	}
 
-	row := Db.QueryRow("INSERT INTO thing (name, creator, parent) VALUES ($1, $2, $3) RETURNING id, created",
+	row := w.db.QueryRow("INSERT INTO thing (name, creator, parent) VALUES ($1, $2, $3) RETURNING id, created",
 		thing.Name, thing.Creator, thing.Parent)
 	err := row.Scan(&thing.Id, &thing.Created)
 	if err != nil {
@@ -77,7 +78,7 @@ func (w *DatabaseWorld) CreateThing(name string, creator *Thing, parent *Thing) 
 }
 
 func (w *DatabaseWorld) MoveThing(thing *Thing, target *Thing) (ok bool) {
-	_, err := Db.Exec("UPDATE thing SET parent = $1 WHERE id = $2",
+	_, err := w.db.Exec("UPDATE thing SET parent = $1 WHERE id = $2",
 		target.Id, thing.Id)
 	if err != nil {
 		log.Println("Error moving a thing", thing.Id, ":", err.Error())

@@ -10,7 +10,9 @@ import (
 	"net/url"
 )
 
-var store *sessions.CookieStore
+var (
+	store *sessions.CookieStore
+)
 
 func AccountForRequest(w http.ResponseWriter, r *http.Request) *Account {
 	session, _ := store.Get(r, "session")
@@ -23,7 +25,7 @@ func AccountForRequest(w http.ResponseWriter, r *http.Request) *Account {
 		return nil
 	}
 
-	return GetAccount(accountName)
+	return Accounts.GetAccount(accountName)
 }
 
 func SetAccountForRequest(w http.ResponseWriter, r *http.Request, acc *Account) {
@@ -99,7 +101,7 @@ func StartWeb() {
 			loginname := r.PostFormValue("name")
 			password := r.PostFormValue("password")
 
-			acc = AccountForLogin(loginname, password)
+			acc = Accounts.AccountForLogin(loginname, password)
 			if acc != nil {
 				SetAccountForRequest(w, r, acc)
 
