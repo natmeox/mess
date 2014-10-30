@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
+	"strconv"
 )
 
 var store *sessions.CookieStore
@@ -165,6 +167,51 @@ func StartWeb() {
 		})
 		if err != nil {
 			log.Println("Error executing index.html template:", err.Error())
+		}
+	}))
+
+	http.Handle("/thing/", RequireAccountFunc(func(w http.ResponseWriter, r *http.Request) {
+		acc := context.Get(r, ContextKeyAccount)
+
+		pathParts := strings.Split(r.URL.Path, "/")
+		thingIdStr := pathParts[2]
+		thingId, err := strconv.ParseInt(thingIdStr, 10, 64)
+		if err != nil {
+			log.Println("Error converting /thing/ argument", thingIdStr, "to number:", err.Error())
+			http.NotFound(w, r)
+			return
+		}
+		thing := World.ThingForId(int(thingId))
+		if thing == nil {
+			// regular ol' expected not-found this time
+			http.NotFound(w, r)
+			return
+		}
+
+		// TODO: permit only some editing once there are permissions
+
+		if r.Method == "POST" {
+			description := r.PostFormValue("description")
+			// TODO: validate??
+			thing.Description = description
+			World.SaveThing(thing)
+		}
+
+		thingTemplate := GetTemplate("thing.html")
+		err = thingTemplate.Execute(w, map[string]interface{}{
+			"Title": thing.Name,
+			"Thing": thing,
+
+			"CsrfToken": nosurf.Token(r),
+			"Config":  map[string]interface{}{
+				"Debug": Config.Debug,
+				"ServiceName": Config.ServiceName,
+				"HostName": Config.HostName,
+			},
+			"Account": acc,
+		})
+		if err != nil {
+			log.Println("Error executing thing.html template:", err.Error())
 		}
 	}))
 

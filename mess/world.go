@@ -10,6 +10,7 @@ type WorldStore interface {
 	ThingForId(id int) *Thing
 	CreateThing(name string, creator *Thing, parent *Thing) (thing *Thing)
 	MoveThing(thing *Thing, target *Thing) (ok bool)
+	SaveThing(thing *Thing) (ok bool)
 }
 
 type DatabaseWorld struct {
@@ -87,6 +88,16 @@ func (w *DatabaseWorld) MoveThing(thing *Thing, target *Thing) (ok bool) {
 	return true
 }
 
+func (w *DatabaseWorld) SaveThing(thing *Thing) (ok bool) {
+	_, err := w.db.Exec("UPDATE thing SET description = $1 WHERE id = $2",
+		thing.Description, thing.Id)
+	if err != nil {
+		log.Println("Error saving a thing", thing.Id, ":", err.Error())
+		return false
+	}
+	return true
+}
+
 type ActiveWorld struct {
 	sync.Mutex
 	Things map[int]*Thing
@@ -138,4 +149,13 @@ func (w *ActiveWorld) MoveThing(thing *Thing, target *Thing) (ok bool) {
 	target.Contents = append(target.Contents, thing.Id)
 
 	return true
+}
+
+func (w *ActiveWorld) SaveThing(thing *Thing) (ok bool) {
+	if w.Next.SaveThing(thing) {
+		// This must be the newest version of thing in memory. Make sure it's the one we're giving out from now on (just in case).
+		w.Things[thing.Id] = thing
+		return true
+	}
+	return false
 }
