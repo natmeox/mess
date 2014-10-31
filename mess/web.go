@@ -12,11 +12,12 @@ import (
 	"strconv"
 )
 
-var store *sessions.CookieStore
-
 type key int
 
 const ContextKeyAccount key = 0
+
+var store *sessions.CookieStore
+var getTemplate func(string) *template.Template
 
 func AccountForRequest(w http.ResponseWriter, r *http.Request) *Account {
 	session, _ := store.Get(r, "session")
@@ -42,6 +43,130 @@ func SetAccountForRequest(w http.ResponseWriter, r *http.Request, acc *Account) 
 	session.Save(r, w)
 }
 
+func RenderTemplate(w http.ResponseWriter, r *http.Request, templateName string, templateContext map[string]interface{}) {
+	context := map[string]interface{}{
+		"CsrfToken": nosurf.Token(r),
+		"Config":  map[string]interface{}{
+			"Debug": Config.Debug,
+			"ServiceName": Config.ServiceName,
+			"HostName": Config.HostName,
+		},
+		"Account": context.Get(r, ContextKeyAccount), // could be nil
+	}
+	// If e.g. Account was provided by the caller, it overrides our default one.
+	for k, v := range templateContext {
+		context[k] = v
+	}
+
+	template := getTemplate(templateName)
+	err := template.Execute(w, context)
+	if err != nil {
+		log.Println("Error executing index.html template:", err.Error())
+	}
+}
+
+func RequireAccount(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		acc := AccountForRequest(w, r)
+		if acc == nil {
+			v := url.Values{}
+			v.Set("next", r.URL.RequestURI())
+			signinUrl := url.URL{
+				Path:     "/signin",
+				RawQuery: v.Encode(),
+			}
+
+			http.Redirect(w, r, signinUrl.RequestURI(), http.StatusTemporaryRedirect)
+			return
+		}
+
+		context.Set(r, ContextKeyAccount, acc)
+		h.ServeHTTP(w, r)
+	})
+}
+
+func RequireAccountFunc(f func(w http.ResponseWriter, r *http.Request)) http.Handler {
+	return RequireAccount(http.HandlerFunc(f))
+}
+
+func WebSignIn(w http.ResponseWriter, r *http.Request) {
+	acc := AccountForRequest(w, r)
+	if acc != nil {
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	if r.Method == "POST" {
+		loginname := r.PostFormValue("name")
+		password := r.PostFormValue("password")
+
+		acc = Accounts.AccountForLogin(loginname, password)
+		if acc != nil {
+			SetAccountForRequest(w, r, acc)
+
+			nextUrl := r.FormValue("next")
+			if nextUrl == "" {
+				nextUrl = "/"
+			}
+			http.Redirect(w, r, nextUrl, http.StatusTemporaryRedirect)
+			return
+		}
+	}
+
+	RenderTemplate(w, r, "signin.html", map[string]interface{}{
+		"CsrfToken": nosurf.Token(r),
+		"Title":     "Sign in",
+	})
+}
+
+func WebSignOut(w http.ResponseWriter, r *http.Request) {
+	// Don't really care if there's an account already or no.
+	SetAccountForRequest(w, r, nil)
+	RenderTemplate(w, r, "signout.html", map[string]interface{}{
+		"Title": "Sign out",
+	})
+}
+
+func WebThing(w http.ResponseWriter, r *http.Request) {
+	pathParts := strings.Split(r.URL.Path, "/")
+	thingIdStr := pathParts[2]
+	thingId, err := strconv.ParseInt(thingIdStr, 10, 64)
+	if err != nil {
+		log.Println("Error converting /thing/ argument", thingIdStr, "to number:", err.Error())
+		http.NotFound(w, r)
+		return
+	}
+	thing := World.ThingForId(int(thingId))
+	if thing == nil {
+		// regular ol' expected not-found this time
+		http.NotFound(w, r)
+		return
+	}
+
+	// TODO: permit only some editing once there are permissions
+
+	if r.Method == "POST" {
+		description := r.PostFormValue("description")
+		// TODO: validate??
+		thing.Table["description"] = description
+		World.SaveThing(thing)
+
+		http.Redirect(w, r, r.URL.Path, http.StatusTemporaryRedirect)
+		return
+	}
+
+	RenderTemplate(w, r, "thing.html", map[string]interface{}{
+		"Title": thing.Name,
+		"Thing": thing,
+	})
+}
+
+func WebIndex(w http.ResponseWriter, r *http.Request) {
+	RenderTemplate(w, r, "index.html", map[string]interface{}{
+		"Title":   "Home",
+	})
+}
+
 func StartWeb() {
 	store = sessions.NewCookieStore([]byte(Config.CookieSecret))
 
@@ -65,155 +190,27 @@ func StartWeb() {
 	}
 
 	// If in Debug mode, re-parse templates with each request.
-	var GetTemplate func(string) *template.Template
 	if Config.Debug {
-		GetTemplate = func(name string) *template.Template {
+		getTemplate = func(name string) *template.Template {
 			templates = ParseTemplates()
 			return LookupTemplate(name)
 		}
 	} else {
-		GetTemplate = LookupTemplate
+		getTemplate = LookupTemplate
 	}
 
-	RequireAccount := func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			acc := AccountForRequest(w, r)
-			if acc == nil {
-				v := url.Values{}
-				v.Set("next", r.URL.RequestURI())
-				signinUrl := url.URL{
-					Path:     "/signin",
-					RawQuery: v.Encode(),
-				}
+	http.HandleFunc("/signin", WebSignIn)
+	http.HandleFunc("/signout", WebSignOut)
+	http.Handle("/thing/", RequireAccountFunc(WebThing))
 
-				http.Redirect(w, r, signinUrl.RequestURI(), http.StatusTemporaryRedirect)
-				return
-			}
-
-			context.Set(r, ContextKeyAccount, acc)
-			h.ServeHTTP(w, r)
-		})
-	}
-	RequireAccountFunc := func(f func(w http.ResponseWriter, r *http.Request)) http.Handler {
-		return RequireAccount(http.HandlerFunc(f))
-	}
-
-	http.HandleFunc("/signin", func(w http.ResponseWriter, r *http.Request) {
-		acc := AccountForRequest(w, r)
-		if acc != nil {
-			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-			return
-		}
-
-		if r.Method == "POST" {
-			loginname := r.PostFormValue("name")
-			password := r.PostFormValue("password")
-
-			acc = Accounts.AccountForLogin(loginname, password)
-			if acc != nil {
-				SetAccountForRequest(w, r, acc)
-
-				nextUrl := r.FormValue("next")
-				if nextUrl == "" {
-					nextUrl = "/"
-				}
-				http.Redirect(w, r, nextUrl, http.StatusTemporaryRedirect)
-				return
-			}
-		}
-
-		signinTemplate := GetTemplate("signin.html")
-		err := signinTemplate.Execute(w, map[string]interface{}{
-			"CsrfToken": nosurf.Token(r),
-			"Title":     "Sign in",
-		})
-		if err != nil {
-			log.Println("Error executing signin.html template:", err.Error())
-		}
-	})
-
-	http.HandleFunc("/signout", func(w http.ResponseWriter, r *http.Request) {
-		// Don't really care if there's an account already or no.
-		SetAccountForRequest(w, r, nil)
-
-		signoutTemplate := GetTemplate("signout.html")
-		err := signoutTemplate.Execute(w, map[string]interface{}{
-			"Title": "Sign out",
-		})
-		if err != nil {
-			log.Println("Error executing signout.html template:", err.Error())
-		}
-	})
-
-	http.Handle("/", RequireAccountFunc(func(w http.ResponseWriter, r *http.Request) {
+	indexHandler := RequireAccountFunc(WebIndex)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.String() != "/" {
 			http.NotFound(w, r)
 			return
 		}
-
-		acc := context.Get(r, ContextKeyAccount)
-
-		indexTemplate := GetTemplate("index.html")
-		err := indexTemplate.Execute(w, map[string]interface{}{
-			"Title":   "Home",
-
-			"CsrfToken": nosurf.Token(r),
-			"Config":  map[string]interface{}{
-				"Debug": Config.Debug,
-				"ServiceName": Config.ServiceName,
-				"HostName": Config.HostName,
-			},
-			"Account": acc,
-		})
-		if err != nil {
-			log.Println("Error executing index.html template:", err.Error())
-		}
-	}))
-
-	http.Handle("/thing/", RequireAccountFunc(func(w http.ResponseWriter, r *http.Request) {
-		acc := context.Get(r, ContextKeyAccount)
-
-		pathParts := strings.Split(r.URL.Path, "/")
-		thingIdStr := pathParts[2]
-		thingId, err := strconv.ParseInt(thingIdStr, 10, 64)
-		if err != nil {
-			log.Println("Error converting /thing/ argument", thingIdStr, "to number:", err.Error())
-			http.NotFound(w, r)
-			return
-		}
-		thing := World.ThingForId(int(thingId))
-		if thing == nil {
-			// regular ol' expected not-found this time
-			http.NotFound(w, r)
-			return
-		}
-
-		// TODO: permit only some editing once there are permissions
-
-		if r.Method == "POST" {
-			description := r.PostFormValue("description")
-			// TODO: validate??
-			thing.Table["description"] = description
-			World.SaveThing(thing)
-		}
-
-		thingTemplate := GetTemplate("thing.html")
-		err = thingTemplate.Execute(w, map[string]interface{}{
-			"Title": thing.Name,
-			"Thing": thing,
-
-			"CsrfToken": nosurf.Token(r),
-			"Config":  map[string]interface{}{
-				"Debug": Config.Debug,
-				"ServiceName": Config.ServiceName,
-				"HostName": Config.HostName,
-			},
-			"Account": acc,
-		})
-		if err != nil {
-			log.Println("Error executing thing.html template:", err.Error())
-		}
-	}))
+		indexHandler.ServeHTTP(w, r)
+	})
 
 	log.Println("Listening for web requests at address", Config.WebAddress)
 	webHandler := context.ClearHandler(nosurf.New(http.DefaultServeMux))
