@@ -2,6 +2,8 @@ package mess
 
 import (
 	"database/sql"
+	"encoding/json"
+	"github.com/jmoiron/sqlx/types"
 	"log"
 	"sync"
 )
@@ -18,13 +20,17 @@ type DatabaseWorld struct {
 }
 
 func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
-	thing = &Thing{}
-	thing.Id = id
+	thing = &Thing{
+		Id: id,
+		Table: make(map[string]interface{}),
+		Contents: make([]int, 0, 2),
+	}
 
-	row := w.db.QueryRow("SELECT name, description, creator, created, parent FROM thing WHERE id = $1",
+	row := w.db.QueryRow("SELECT name, creator, created, parent, tabledata FROM thing WHERE id = $1",
 		id)
 	var parent sql.NullInt64
-	err := row.Scan(&thing.Name, &thing.Description, &thing.Creator, &thing.Created, &parent)
+	var tabledata types.JsonText
+	err := row.Scan(&thing.Name, &thing.Creator, &thing.Created, &parent, &tabledata)
 	if err != nil {
 		log.Println("Error finding thing", id, ":", err.Error())
 		return nil
@@ -32,8 +38,11 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 	if parent.Valid {
 		thing.Parent = int(parent.Int64)
 	}
-
-	thing.Contents = make([]int, 0, 2)
+	err = tabledata.Unmarshal(&thing.Table)
+	if err != nil {
+		log.Println("Error finding table data for thing", id, ":", err.Error())
+		return nil
+	}
 
 	rows, err := w.db.Query("SELECT id FROM thing WHERE parent = $1", id)
 	if err != nil {
@@ -61,7 +70,6 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 func (w *DatabaseWorld) CreateThing(name string, creator *Thing, parent *Thing) (thing *Thing) {
 	thing = &Thing{
 		Name:        name,
-		Description: "",
 		Creator:     creator.Id,
 		Parent:      parent.Id,
 		Contents:    make([]int, 0),
@@ -89,8 +97,14 @@ func (w *DatabaseWorld) MoveThing(thing *Thing, target *Thing) (ok bool) {
 }
 
 func (w *DatabaseWorld) SaveThing(thing *Thing) (ok bool) {
-	_, err := w.db.Exec("UPDATE thing SET description = $1 WHERE id = $2",
-		thing.Description, thing.Id)
+	tabletext, err := json.Marshal(thing.Table)
+	if err != nil {
+		log.Println("Error serializing table data for thing", thing.Id, ":", err.Error())
+		return false
+	}
+	log.Println("Serialized thing's table into jsontext:", tabletext)
+	_, err = w.db.Exec("UPDATE thing SET tabledata = $1 WHERE id = $2",
+		types.JsonText(tabletext), thing.Id)
 	if err != nil {
 		log.Println("Error saving a thing", thing.Id, ":", err.Error())
 		return false

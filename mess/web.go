@@ -193,7 +193,7 @@ func StartWeb() {
 		if r.Method == "POST" {
 			description := r.PostFormValue("description")
 			// TODO: validate??
-			thing.Description = description
+			thing.Table["description"] = description
 			World.SaveThing(thing)
 		}
 

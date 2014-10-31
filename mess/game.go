@@ -10,13 +10,14 @@ import (
 type Thing struct {
 	Id          int
 	Name        string
-	Description string
 	Creator     int
 	Created     time.Time
 
 	Client   *ClientPump
 	Parent   int
 	Contents []int // ID numbers
+
+	Table map[string]interface{}
 }
 
 var World WorldStore
@@ -66,7 +67,12 @@ func GameLook(client *ClientPump, char *Thing, rest string) {
 
 	if target != nil {
 		client.ToClient <- target.Name
-		client.ToClient <- target.Description
+		desc, ok := target.Table["description"].(string)
+		if ok && desc != "" {
+			client.ToClient <- desc
+		} else {
+			client.ToClient <- "You see nothing special."
+		}
 		return
 	}
 

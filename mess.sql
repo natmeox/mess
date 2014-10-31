@@ -1,10 +1,10 @@
 CREATE TABLE thing (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    description TEXT NOT NULL DEFAULT '',
     creator INTEGER NOT NULL REFERENCES thing DEFERRABLE INITIALLY DEFERRED,
     created TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    parent INTEGER REFERENCES thing
+    parent INTEGER REFERENCES thing,
+    tabledata JSON NOT NULL DEFAULT '{}'::json
 );
 
 CREATE TABLE account (
