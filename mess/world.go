@@ -102,7 +102,6 @@ func (w *DatabaseWorld) SaveThing(thing *Thing) (ok bool) {
 		log.Println("Error serializing table data for thing", thing.Id, ":", err.Error())
 		return false
 	}
-	log.Println("Serialized thing's table into jsontext:", tabletext)
 	_, err = w.db.Exec("UPDATE thing SET tabledata = $1 WHERE id = $2",
 		types.JsonText(tabletext), thing.Id)
 	if err != nil {
