@@ -7,7 +7,20 @@
 
         <div class="form-group">
             <div class="col-sm-offset-2 col-sm-10">
-                <h3 class="">Editing “{{ .Thing.Name }}”</h3>
+                <h3>Editing “{{ .Thing.Name }}”</h3>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <a href="/table/{{ .Thing.Id }}" class="btn btn-primary">
+                    <i class="glyphicon glyphicon-list"></i> Edit all data</a>
+                <a href="/program/{{ .Thing.Id }}" class="btn btn-primary">
+                    <i class="glyphicon glyphicon-film"></i> Edit program</a>
+                <a href="/table/{{ .Thing.Id }}" class="btn btn-primary">
+                    <i class="glyphicon glyphicon-lock"></i> Change password</a>
+                <a href="/table/{{ .Thing.Id }}" class="btn btn-primary">
+                    <i class="glyphicon glyphicon-certificate"></i> Use outfits</a>
             </div>
         </div>
 
@@ -44,6 +57,57 @@
             <label for="description" class="col-sm-2 control-label">Description</label>
             <div class="col-sm-10">
                 <textarea id="description" name="description" class="form-control" rows="7">{{ .Thing.Table.description }}</textarea>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-sm-2 control-label">Actions</label>
+            <div class="col-sm-10">
+
+                <table class="table table-exits">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Target</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr><td colspan="2">
+                            <button id="addExit" class="btn btn-primary">
+                                <i class="glyphicon glyphicon-plus"></i>
+                                Add action
+                            </button>
+                        </tr>
+                    </tfoot>
+                    <tr>
+                        <td>echo</td>
+                        <td>
+                            <span class="label label-info">
+                                <i class="glyphicon glyphicon-film"></i>
+                                echo.lua
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>morph</td>
+                        <td>
+                            <span class="label label-info">
+                                <i class="glyphicon glyphicon-film"></i>
+                                quiet-morph-only.lua
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>escape</td>
+                        <td>
+                            <span class="label label-success">
+                                <i class="glyphicon glyphicon-globe"></i>
+                                Natasha’s Home
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+
             </div>
         </div>
 
