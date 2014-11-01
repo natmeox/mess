@@ -146,12 +146,13 @@ func WebThing(w http.ResponseWriter, r *http.Request) {
 	// TODO: permit only some editing once there are permissions
 
 	if r.Method == "POST" {
-		description := r.PostFormValue("description")
 		// TODO: validate??
-		thing.Table["description"] = description
+		thing.Table["glance"] = r.PostFormValue("glance")
+		thing.Table["description"] = r.PostFormValue("description")
+		thing.Table["pronouns"] = r.PostFormValue("pronouns")
 		World.SaveThing(thing)
 
-		http.Redirect(w, r, r.URL.Path, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
 		return
 	}
 
