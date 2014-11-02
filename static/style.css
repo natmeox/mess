@@ -3749,8 +3749,8 @@ h3 {
 .table > tfoot > tr > th.changed,
 .table > tfoot > tr.changed > td,
 .table > tfoot > tr.changed > th {
-  background-color: #d9edf7; }
+  background-color: #fcf8e3; }
 
 .table-hover > tbody > tr > td.changed:hover,
 .table-hover > tbody > tr > th.changed:hover, .table-hover > tbody > tr.changed:hover > td, .table-hover > tbody > tr:hover > .changed, .table-hover > tbody > tr.changed:hover > th {
-  background-color: #c4e3f3; }
+  background-color: #faf2cc; }

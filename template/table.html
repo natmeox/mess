@@ -6,6 +6,7 @@
 
     <form method="post" class="form form-horizontal" role="form">
         <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+        <input type="hidden" name="updated_data">
 
         <table id="dataTable" class="table">
             <thead>
@@ -20,9 +21,9 @@
                     <td class="key"></td>
                     <td>
                         <select class="form-control input-sm">
-                            <option>String</option>
-                            <option>Number</option>
-                            <option>Boolean</option>
+                            <option value="string">String</option>
+                            <option value="number">Number</option>
+                            <option value="boolean">Boolean</option>
                         </select>
                     </td>
                     <td>
@@ -55,10 +56,35 @@
 
             var $tbody = $("#dataTable tbody");
 
+            $tbody.on('change', 'select', function () {
+                var $select = $(this);
+                var $row = $select.parents('tr');
+
+                $row.find('.string').parents('td').find('span').addClass('hidden');
+
+                var dataType = $select.val();
+                var classToUnhide = dataType == 'string' ? '.string'
+                                  : dataType == 'number' ? '.number'
+                                  :                        '.boolean'
+                                  ;
+                $row.find(classToUnhide).removeClass('hidden').focus();
+            });
+
             $tbody.on('input', 'td span', function () {
                 var $cell = $(this);
-                var value = $.trim($cell.text());
-                if (value != $cell.data('original')) {
+                var valueText = $cell.text();
+
+                var $row = $cell.parents('tr');
+                var datatype = $row.find('select').val();
+                if (datatype == 'boolean') {
+                    // Uh, that's none of our business then.
+                    return;
+                }
+
+                // TODO: non-integer numbers?
+                var value = datatype == 'string' ? valueText : parseInt(valueText, 10);
+
+                if (value != $row.data('original')) {
                     $cell.data('changed', 'true');
                     $cell.parents('tr').addClass('changed');
                 }
@@ -66,6 +92,17 @@
                     $cell.data('changed', '');
                     $cell.parents('tr').removeClass('changed');
                 }
+            });
+
+            $('form').on('submit', function () {
+                var updatedData = {};
+                $('#dataTable tr.changed').each(function (i, val) {
+                    var $row = $(val);
+                    var key = $.trim($row.find('.key').text());
+                    
+                });
+                $('#updated_data').val(JSON.stringify(updatedData));
+                return true;
             });
 
             function addTableField(name, data) {
@@ -79,23 +116,24 @@
                     return;
                 }
 
-                var $row = $('#blankEditorRow').clone();
+                var $row = $('#blankEditorRow').clone().attr('id', '');
                 $row.removeClass('hidden');
+                $row.data('original', data);
 
                 $row.find('.key').text(name);
 
                 if (typeof data == 'string') {
                     $row.find('.string').text(data).removeClass('hidden');
-                    $row.find('select').val('String');
+                    $row.find('select').val('string');
                 }
                 else if (typeof data == 'boolean') {
                     $row.find('.boolean').removeClass('hidden')
                         .find('input').get(0).checked = data ? true : false;
-                    $row.find('select').val('Boolean');
+                    $row.find('select').val('boolean');
                 }
                 else {
                     $row.find('.number').text(data).removeClass('hidden');
-                    $row.find('select').val('Number');
+                    $row.find('select').val('number');
                 }
 
                 $tbody.append($row);
