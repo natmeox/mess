@@ -8,10 +8,10 @@ import (
 )
 
 type Thing struct {
-	Id          int
-	Name        string
-	Creator     int
-	Created     time.Time
+	Id      int
+	Name    string
+	Creator int
+	Created time.Time
 
 	Client   *ClientPump
 	Parent   int

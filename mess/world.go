@@ -21,8 +21,8 @@ type DatabaseWorld struct {
 
 func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 	thing = &Thing{
-		Id: id,
-		Table: make(map[string]interface{}),
+		Id:       id,
+		Table:    make(map[string]interface{}),
 		Contents: make([]int, 0, 2),
 	}
 
@@ -69,10 +69,10 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 
 func (w *DatabaseWorld) CreateThing(name string, creator *Thing, parent *Thing) (thing *Thing) {
 	thing = &Thing{
-		Name:        name,
-		Creator:     creator.Id,
-		Parent:      parent.Id,
-		Contents:    make([]int, 0),
+		Name:     name,
+		Creator:  creator.Id,
+		Parent:   parent.Id,
+		Contents: make([]int, 0),
 	}
 
 	row := w.db.QueryRow("INSERT INTO thing (name, creator, parent) VALUES ($1, $2, $3) RETURNING id, created",

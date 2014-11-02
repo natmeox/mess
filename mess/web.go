@@ -10,8 +10,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type key int
@@ -48,10 +48,10 @@ func SetAccountForRequest(w http.ResponseWriter, r *http.Request, acc *Account) 
 func RenderTemplate(w http.ResponseWriter, r *http.Request, templateName string, templateContext map[string]interface{}) {
 	context := map[string]interface{}{
 		"CsrfToken": nosurf.Token(r),
-		"Config":  map[string]interface{}{
-			"Debug": Config.Debug,
+		"Config": map[string]interface{}{
+			"Debug":       Config.Debug,
 			"ServiceName": Config.ServiceName,
-			"HostName": Config.HostName,
+			"HostName":    Config.HostName,
 		},
 		"Account": context.Get(r, ContextKeyAccount), // could be nil
 	}
@@ -268,7 +268,7 @@ func WebThing(w http.ResponseWriter, r *http.Request) {
 
 func WebIndex(w http.ResponseWriter, r *http.Request) {
 	RenderTemplate(w, r, "index.html", map[string]interface{}{
-		"Title":   "Home",
+		"Title": "Home",
 	})
 }
 
