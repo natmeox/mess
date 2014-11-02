@@ -129,6 +129,46 @@ func WebSignOut(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func mergeMapInto(source map[string]interface{}, target map[string]interface{}) map[string]interface{} {
+	for key, value := range source {
+		switch value.(type) {
+		case map[string]interface{}:
+			valueMap := value.(map[string]interface{})
+			nextTarget := target[key]
+			switch nextTarget.(type) {
+			case map[string]interface{}:
+				target[key] = mergeMapInto(valueMap, nextTarget.(map[string]interface{}))
+			default:
+				// Well... we are replacing target values with source ones. So this type mismatch is allowed.
+				target[key] = valueMap
+			}
+		default:
+			target[key] = value
+		}
+	}
+	return target
+}
+
+func deleteMapFrom(source map[string]interface{}, target map[string]interface{}) map[string]interface{} {
+	for key, value := range source {
+		switch value.(type) {
+		case map[string]interface{}:
+			valueMap := value.(map[string]interface{})
+			nextTarget := target[key]
+			switch nextTarget.(type) {
+			case map[string]interface{}:
+				target[key] = deleteMapFrom(valueMap, nextTarget.(map[string]interface{}))
+			default:
+				// Uhhh... if the target is no longer a map, then any further deleted keys from deeper in the source are "deleted". So yay?
+				break
+			}
+		default:
+			delete(target, key)
+		}
+	}
+	return target
+}
+
 func WebTable(w http.ResponseWriter, r *http.Request) {
 	pathParts := strings.Split(r.URL.Path, "/")
 	thingIdStr := pathParts[2]
@@ -148,12 +188,38 @@ func WebTable(w http.ResponseWriter, r *http.Request) {
 	// TODO: permit only some editing once there are permissions
 
 	if r.Method == "POST" {
+		updateText := r.PostFormValue("updated_data")
+		var updates map[string]interface{}
+		err := json.Unmarshal([]byte(updateText), &updates)
+		if err != nil {
+			// aw carp
+			// TODO: set a flash?
+			http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
+			return
+		}
+
+		deleteText := r.PostFormValue("deleted_data")
+		var deletes map[string]interface{}
+		err = json.Unmarshal([]byte(deleteText), &deletes)
+		if err != nil {
+			// aw carp
+			// TODO: set a flash?
+			http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
+			return
+		}
+
+		thing.Table = mergeMapInto(updates, thing.Table)
+		thing.Table = deleteMapFrom(deletes, thing.Table)
+		World.SaveThing(thing)
+
+		http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
+		return
 	}
 
 	RenderTemplate(w, r, "table.html", map[string]interface{}{
 		"Title": fmt.Sprintf("Edit all data – %s", thing.Name),
 		"Thing": thing,
-		"json": func (v interface{}) interface{} {
+		"json": func(v interface{}) interface{} {
 			output, err := json.MarshalIndent(v, "", "    ")
 			if err != nil {
 				escapedError := template.JSEscapeString(err.Error())
