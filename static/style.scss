@@ -22,4 +22,56 @@ h3 {
 	margin: 0;
 }
 
+@include table-row-variant('added', $state-success-bg);
 @include table-row-variant('changed', $state-warning-bg);
+@include table-row-variant('deleted', $state-danger-bg);
+@include table-row-variant('error', $state-danger-bg);
+
+#dataTable {
+    table {
+        margin: (2*$table-cell-padding + $line-height-computed) 0 0;
+    }
+
+    .key {
+        white-space: nowrap;
+    }
+
+    .actions {
+        visibility: hidden;
+    }
+    td:hover > .actions {
+        visibility: visible;
+    }
+
+    .valuetext {
+        font-family: 'Inconsolata', monospace;
+    }
+    .label {
+        margin-left: 1rem;
+    }
+
+    .leaf button.add {
+        display: none;
+    }
+
+    button.revert {
+        display: none;
+    }
+
+    .deleted {
+        text-decoration: line-through;
+
+        button.delete {
+            display: none;
+        }
+        button.revert {
+            display: inline-block;
+        }
+    }
+
+    .changed {
+        button.revert {
+            display: inline-block;
+        }
+    }
+}

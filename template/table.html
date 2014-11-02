@@ -6,36 +6,22 @@
 
     <form method="post" class="form form-horizontal" role="form">
         <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
-        <input type="hidden" name="updated_data">
+        <input type="hidden" id="updated_data" name="updated_data">
 
         <table id="dataTable" class="table">
             <thead>
                 <tr>
                     <th>Key</th>
-                    <th>Type</th>
                     <th>Value</th>
                 </tr>
             </thead>
             <tfoot>
-                <tr id="blankEditorRow" class="hidden">
-                    <td class="key"></td>
-                    <td>
-                        <select class="form-control input-sm">
-                            <option value="string">String</option>
-                            <option value="number">Number</option>
-                            <option value="boolean">Boolean</option>
-                        </select>
-                    </td>
-                    <td>
-                        <span class="string hidden" contentEditable></span>
-                        <span class="number hidden" contentEditable></span>
-                        <span class="boolean hidden"><input type="checkbox"></span>
+                <tr>
+                    <td colspan="2">
+                        <button id="addValueTop" class="btn btn-primary">
+                            <i class="glyphicon glyphicon-plus"></i> Add value</button>
                     </td>
                 </tr>
-                <tr><td colspan="3">
-                    <button id="addField" class="btn btn-primary">
-                        <i class="glyphicon glyphicon-plus"></i> Add key</button>
-                </td></tr>
             </tfoot>
             <tbody></tbody>
         </table>
@@ -49,98 +35,192 @@
 
     </form>
 
+    <script type="text/template" id="tableRow">
+        <tr class="leaf">
+            <td class="key">
+                <span class="name"></span>
+                <span class="actions">
+                    <button class="btn btn-link delete"><i class="glyphicon glyphicon-remove"></i></button>
+                    <button class="btn btn-link revert"><i class="glyphicon glyphicon-refresh"></i></button>
+                    <button class="btn btn-link add"><i class="glyphicon glyphicon-plus"></i></button>
+                </span>
+            </td>
+            <td class="value" width="100%">
+                <span class="valuetext" contentEditable></span>
+                <span class="label label-danger"></span>
+            </td>
+        </tr>
+    </script>
+
     <script>
         var thingData = {{ .Thing.Table | call .json }};
 
-        $(function () {
+        function newTableSystem() {
+            var rowTmpl = $('#tableRow').html();
+            var $dataTable = $('#dataTable');
 
-            var $tbody = $("#dataTable tbody");
+            function addNewRow($table) {
+                var $newRow = $(rowTmpl).addClass('added');
+                var $newRowName = $newRow.find('.name');
+                $newRowName.get(0).contentEditable = 'true';
+                $table.append($newRow);
+                $newRowName.focus();
+            }
 
-            $tbody.on('change', 'select', function () {
-                var $select = $(this);
-                var $row = $select.parents('tr');
-
-                $row.find('.string').parents('td').find('span').addClass('hidden');
-
-                var dataType = $select.val();
-                var classToUnhide = dataType == 'string' ? '.string'
-                                  : dataType == 'number' ? '.number'
-                                  :                        '.boolean'
-                                  ;
-                $row.find(classToUnhide).removeClass('hidden').focus();
+            $('#addValueTop').click(function () {
+                addNewRow($dataTable);
+                return false;
             });
 
-            $tbody.on('input', 'td span', function () {
-                var $cell = $(this);
-                var valueText = $cell.text();
+            $dataTable.on('click', 'button.add', function () {
+                var $button = $(this);
+                var $row = $button.parents('tr').first();
+                var $childTable = $row.children('.value').children('table');
+                addNewRow($childTable);
+                return false;
+            });
 
-                var $row = $cell.parents('tr');
-                var datatype = $row.find('select').val();
-                if (datatype == 'boolean') {
-                    // Uh, that's none of our business then.
-                    return;
+            $dataTable.on('blur', '.name', function () {
+                $(this).contentEditable = 'inherit';
+            });
+
+            $dataTable.on('click', 'button.delete', function () {
+                var $button = $(this);
+                var $row = $button.parents('tr').first();
+                $row.addClass('deleted');
+                return false;
+            });
+
+            $dataTable.on('click', 'button.revert', function () {
+                var $button = $(this);
+                var $row = $button.parents('tr').first();
+                if ($row.hasClass('deleted')) {
+                    $row.removeClass('deleted');
+                }
+                else if ($row.hasClass('changed')) {
+                    var valuetext = $row.data('original');
+                    $row.find('.valuetext').text(valuetext);
+                    $row.removeClass('changed');
+
+                    checkError($row, valuetext);
+                }
+                return false;
+            });
+
+            function checkError($row, valuetext) {
+                console.log("Checking error for row", $row, "text", valuetext);
+                var obj;
+                try {
+                    obj = JSON.parse(valuetext);
+
+                    // Success! So clear an error if there was one before.
+                    $row.find('.label-danger').text('');
+                    $row.removeClass('error');
+                }
+                catch (err) {
+                    console.log(valuetext, err.message);
+                    $row.find('.label-danger').text(err.message);
+                    $row.addClass('error');
+                }
+                return obj;
+            }
+
+            $dataTable.on('input', '.valuetext', function () {
+                var $valuetext = $(this);
+                var $row = $valuetext.parents('tr').first();
+
+                if ($row.hasClass('error')) {
+                    $row.removeClass('error');
+                    $valuetext.next('.label').text('');
                 }
 
-                // TODO: non-integer numbers?
-                var value = datatype == 'string' ? valueText : parseInt(valueText, 10);
-
-                if (value != $row.data('original')) {
-                    $cell.data('changed', 'true');
-                    $cell.parents('tr').addClass('changed');
+                var originalData = $row.data('original');
+                if (originalData && originalData != $valuetext.text()) {
+                    $row.addClass('changed');
                 }
                 else {
-                    $cell.data('changed', '');
-                    $cell.parents('tr').removeClass('changed');
+                    $row.removeClass('changed');
                 }
+            });
+
+            $dataTable.on('blur', '.valuetext', function () {
+                var $valuetext = $(this);
+                var $row = $valuetext.parents('tr').first();
+                var obj = checkError($row, $valuetext.text());
+                // TODO: what if it's an object? Automatically table-ize.
             });
 
             $('form').on('submit', function () {
-                var updatedData = {};
-                $('#dataTable tr.changed').each(function (i, val) {
+                var $errors = $dataTable.find('tr.error');
+                if ($errors.size()) {
+                    var $firstError = $errors.first();
+                    var errorTop = $firstError.offset().top;
+                    $('html,body').animate({ 'scrollTop': errorTop + 'px' });
+                    $firstError.focus();
+                    return false;
+                }
+
+                var updates = {};
+
+                var $changedRows = $('tr.changed').add('tr.added').add('tr.deleted');
+                $changedRows.each(function (i, val) {
                     var $row = $(val);
-                    var key = $.trim($row.find('.key').text());
-                    
+                    var rowKey = $row.find('.name').text();
+
+                    var keys = $row.parents('tr').map(function (i, val) {
+                        return $(val).children('.key').children('.name').text()
+                    }).get().reverse();
+
+                    var thisUpdate = updates;
+                    for (var i = 0; i < keys.length; i++) {
+                        var key = keys[i];
+                        if (!(key in thisUpdate)) {
+                            thisUpdate = thisUpdate[key] = {};
+                        }
+                        else if (typeof thisUpdate[key] == 'object') {
+                            thisUpdate = thisUpdate[key];
+                        }
+                        else {
+                            console.log("Couldn't select into", updates, "by keys", keys);
+                            throw new Exception("No :(");
+                        }
+                    }
+
+                    if ($row.hasClass('deleted')) {
+                        thisUpdate[rowKey] = null;
+                    }
+                    else {
+                        var rowValue = $row.find('.valuetext').text();
+                        thisUpdate[rowKey] = JSON.parse(rowValue);
+                    }
                 });
-                $('#updated_data').val(JSON.stringify(updatedData));
-                return true;
+
+                $('#updated_data').val(JSON.stringify(updates));
             });
 
-            function addTableField(name, data) {
-                console.log("Adding a table field", name, "with data", data);
-
-                if (data && typeof data == 'object') {
-                    $.each(data, function (key, val) {
-                        var newName = (name ? name + '.' : '') + key;
-                        addTableField(newName, val);
-                    });
-                    return;
-                }
-
-                var $row = $('#blankEditorRow').clone().attr('id', '');
-                $row.removeClass('hidden');
-                $row.data('original', data);
-
-                $row.find('.key').text(name);
-
-                if (typeof data == 'string') {
-                    $row.find('.string').text(data).removeClass('hidden');
-                    $row.find('select').val('string');
-                }
-                else if (typeof data == 'boolean') {
-                    $row.find('.boolean').removeClass('hidden')
-                        .find('input').get(0).checked = data ? true : false;
-                    $row.find('select').val('boolean');
-                }
-                else {
-                    $row.find('.number').text(data).removeClass('hidden');
-                    $row.find('select').val('number');
-                }
-
-                $tbody.append($row);
+            function addTableTo($div, data) {
+                $.each(data, function (key, val) {
+                    var $row = $(rowTmpl);
+                    $row.find('.name').text(key);
+                    if (val && typeof val == 'object') {
+                        $row.removeClass('leaf');
+                        var $table = $('<table>').addClass('table');
+                        $row.find('.valuetext').replaceWith($table);
+                        addTableTo($table, val);
+                    }
+                    else {
+                        var text = JSON.stringify(val);
+                        $row.data('original', text);
+                        $row.find('.valuetext').text(text);
+                    }
+                    $div.append($row);
+                });
             }
 
-            addTableField('', thingData);
-        });
+            addTableTo($dataTable, thingData);
+        }
+
+        $(newTableSystem);
     </script>
 
 {{ template "foot.html" . }}

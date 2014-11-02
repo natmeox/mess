@@ -3739,6 +3739,22 @@ table.table-exits span.label {
 h3 {
   margin: 0; }
 
+.table > thead > tr > td.added,
+.table > thead > tr > th.added, .table > thead > tr.added > td, .table > thead > tr.added > th,
+.table > tbody > tr > td.added,
+.table > tbody > tr > th.added,
+.table > tbody > tr.added > td,
+.table > tbody > tr.added > th,
+.table > tfoot > tr > td.added,
+.table > tfoot > tr > th.added,
+.table > tfoot > tr.added > td,
+.table > tfoot > tr.added > th {
+  background-color: #dff0d8; }
+
+.table-hover > tbody > tr > td.added:hover,
+.table-hover > tbody > tr > th.added:hover, .table-hover > tbody > tr.added:hover > td, .table-hover > tbody > tr:hover > .added, .table-hover > tbody > tr.added:hover > th {
+  background-color: #d0e9c6; }
+
 .table > thead > tr > td.changed,
 .table > thead > tr > th.changed, .table > thead > tr.changed > td, .table > thead > tr.changed > th,
 .table > tbody > tr > td.changed,
@@ -3754,3 +3770,60 @@ h3 {
 .table-hover > tbody > tr > td.changed:hover,
 .table-hover > tbody > tr > th.changed:hover, .table-hover > tbody > tr.changed:hover > td, .table-hover > tbody > tr:hover > .changed, .table-hover > tbody > tr.changed:hover > th {
   background-color: #faf2cc; }
+
+.table > thead > tr > td.deleted,
+.table > thead > tr > th.deleted, .table > thead > tr.deleted > td, .table > thead > tr.deleted > th,
+.table > tbody > tr > td.deleted,
+.table > tbody > tr > th.deleted,
+.table > tbody > tr.deleted > td,
+.table > tbody > tr.deleted > th,
+.table > tfoot > tr > td.deleted,
+.table > tfoot > tr > th.deleted,
+.table > tfoot > tr.deleted > td,
+.table > tfoot > tr.deleted > th {
+  background-color: #f2dede; }
+
+.table-hover > tbody > tr > td.deleted:hover,
+.table-hover > tbody > tr > th.deleted:hover, .table-hover > tbody > tr.deleted:hover > td, .table-hover > tbody > tr:hover > .deleted, .table-hover > tbody > tr.deleted:hover > th {
+  background-color: #ebcccc; }
+
+.table > thead > tr > td.error,
+.table > thead > tr > th.error, .table > thead > tr.error > td, .table > thead > tr.error > th,
+.table > tbody > tr > td.error,
+.table > tbody > tr > th.error,
+.table > tbody > tr.error > td,
+.table > tbody > tr.error > th,
+.table > tfoot > tr > td.error,
+.table > tfoot > tr > th.error,
+.table > tfoot > tr.error > td,
+.table > tfoot > tr.error > th {
+  background-color: #f2dede; }
+
+.table-hover > tbody > tr > td.error:hover,
+.table-hover > tbody > tr > th.error:hover, .table-hover > tbody > tr.error:hover > td, .table-hover > tbody > tr:hover > .error, .table-hover > tbody > tr.error:hover > th {
+  background-color: #ebcccc; }
+
+#dataTable table {
+  margin: 36px 0 0; }
+#dataTable .key {
+  white-space: nowrap; }
+#dataTable .actions {
+  visibility: hidden; }
+#dataTable td:hover > .actions {
+  visibility: visible; }
+#dataTable .valuetext {
+  font-family: 'Inconsolata', monospace; }
+#dataTable .label {
+  margin-left: 1rem; }
+#dataTable .leaf button.add {
+  display: none; }
+#dataTable button.revert {
+  display: none; }
+#dataTable .deleted {
+  text-decoration: line-through; }
+  #dataTable .deleted button.delete {
+    display: none; }
+  #dataTable .deleted button.revert {
+    display: inline-block; }
+#dataTable .changed button.revert {
+  display: inline-block; }
