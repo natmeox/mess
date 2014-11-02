@@ -1,6 +1,8 @@
 package mess
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 	"github.com/justinas/nosurf"
@@ -127,6 +129,42 @@ func WebSignOut(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func WebTable(w http.ResponseWriter, r *http.Request) {
+	pathParts := strings.Split(r.URL.Path, "/")
+	thingIdStr := pathParts[2]
+	thingId, err := strconv.ParseInt(thingIdStr, 10, 64)
+	if err != nil {
+		log.Println("Error converting /thing/ argument", thingIdStr, "to number:", err.Error())
+		http.NotFound(w, r)
+		return
+	}
+	thing := World.ThingForId(int(thingId))
+	if thing == nil {
+		// regular ol' expected not-found this time
+		http.NotFound(w, r)
+		return
+	}
+
+	// TODO: permit only some editing once there are permissions
+
+	if r.Method == "POST" {
+	}
+
+	RenderTemplate(w, r, "table.html", map[string]interface{}{
+		"Title": fmt.Sprintf("Edit all data – %s", thing.Name),
+		"Thing": thing,
+		"json": func (v interface{}) interface{} {
+			output, err := json.MarshalIndent(v, "", "    ")
+			if err != nil {
+				escapedError := template.JSEscapeString(err.Error())
+				message := fmt.Sprintf("/* error encoding JSON: %s */ {}", escapedError)
+				return template.JS(message)
+			}
+			return template.JS(output)
+		},
+	})
+}
+
 func WebThing(w http.ResponseWriter, r *http.Request) {
 	pathParts := strings.Split(r.URL.Path, "/")
 	thingIdStr := pathParts[2]
@@ -202,6 +240,7 @@ func StartWeb() {
 
 	http.HandleFunc("/signin", WebSignIn)
 	http.HandleFunc("/signout", WebSignOut)
+	http.Handle("/table/", RequireAccountFunc(WebTable))
 	http.Handle("/thing/", RequireAccountFunc(WebThing))
 
 	indexHandler := RequireAccountFunc(WebIndex)
