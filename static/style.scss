@@ -1,0 +1,25 @@
+@import "bootstrap";
+
+/*
+ *  mess CSS
+ */
+
+html, body {
+	font-size: 1rem;
+}
+
+body {
+	margin-top: 1rem;
+
+	font-family: 'Source Sans Pro', sans-serif;
+}
+
+table.table-exits span.label {
+	font-size: inherit;
+}
+
+h3 {
+	margin: 0;
+}
+
+@include table-row-variant('changed', $state-info-bg);
