@@ -3375,9 +3375,9 @@ a.label:hover, a.label:focus {
   .label-primary[href]:hover, .label-primary[href]:focus {
     background-color: #3071a9; }
 
-.label-success {
+.label-success, #dataTable .label-added {
   background-color: #5cb85c; }
-  .label-success[href]:hover, .label-success[href]:focus {
+  .label-success[href]:hover, #dataTable [href].label-added:hover, .label-success[href]:focus, #dataTable [href].label-added:focus {
     background-color: #449d44; }
 
 .label-info {
@@ -3385,14 +3385,14 @@ a.label:hover, a.label:focus {
   .label-info[href]:hover, .label-info[href]:focus {
     background-color: #31b0d5; }
 
-.label-warning {
+.label-warning, #dataTable .label-changed {
   background-color: #f0ad4e; }
-  .label-warning[href]:hover, .label-warning[href]:focus {
+  .label-warning[href]:hover, #dataTable [href].label-changed:hover, .label-warning[href]:focus, #dataTable [href].label-changed:focus {
     background-color: #ec971f; }
 
-.label-danger {
+.label-danger, #dataTable .label-deleted, #dataTable .label-error {
   background-color: #d9534f; }
-  .label-danger[href]:hover, .label-danger[href]:focus {
+  .label-danger[href]:hover, #dataTable [href].label-deleted:hover, #dataTable [href].label-error:hover, .label-danger[href]:focus, #dataTable [href].label-deleted:focus, #dataTable [href].label-error:focus {
     background-color: #c9302c; }
 
 .panel {
@@ -3811,19 +3811,28 @@ h3 {
   visibility: hidden; }
 #dataTable td:hover > .actions {
   visibility: visible; }
-#dataTable .valuetext {
-  font-family: 'Inconsolata', monospace; }
-#dataTable .label {
-  margin-left: 1rem; }
 #dataTable .leaf button.add {
   display: none; }
 #dataTable button.revert {
   display: none; }
+#dataTable .valuetext {
+  font-family: 'Inconsolata', monospace; }
+#dataTable .label {
+  margin-left: 1rem;
+  display: none; }
+#dataTable .added .label-added {
+  display: inline-block; }
 #dataTable .deleted {
   text-decoration: line-through; }
   #dataTable .deleted button.delete {
     display: none; }
   #dataTable .deleted button.revert {
     display: inline-block; }
+  #dataTable .deleted .label-deleted {
+    display: inline-block; }
 #dataTable .changed button.revert {
+  display: inline-block; }
+#dataTable .changed .label-changed {
+  display: inline-block; }
+#dataTable .error .label-error {
   display: inline-block; }

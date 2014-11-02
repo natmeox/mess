@@ -7,6 +7,7 @@
     <form method="post" class="form form-horizontal" role="form">
         <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
         <input type="hidden" id="updated_data" name="updated_data">
+        <input type="hidden" id="deleted_data" name="deleted_data">
 
         <table id="dataTable" class="table">
             <thead>
@@ -47,7 +48,10 @@
             </td>
             <td class="value" width="100%">
                 <span class="valuetext" contentEditable></span>
-                <span class="label label-danger"></span>
+                <span class="label label-error"></span>
+                <span class="label label-added">Added</span>
+                <span class="label label-changed">Changed</span>
+                <span class="label label-deleted">Deleted</span>
             </td>
         </tr>
     </script>
@@ -72,16 +76,29 @@
                 return false;
             });
 
+            $dataTable.on('keydown', '.name,.valuetext', function (evt) {
+                if (evt.which == 13) {
+                    $(this).blur();
+                    return false;
+                }
+            });
+
+            $dataTable.on('blur', '.name', function () {
+                var $name = $(this);
+                if ($.trim($name.text()) == '') {
+                    $name.parents('tr').first().remove();
+                }
+                else {
+                    $name.contentEditable = 'inherit';
+                }
+            });
+
             $dataTable.on('click', 'button.add', function () {
                 var $button = $(this);
                 var $row = $button.parents('tr').first();
                 var $childTable = $row.children('.value').children('table');
                 addNewRow($childTable);
                 return false;
-            });
-
-            $dataTable.on('blur', '.name', function () {
-                $(this).contentEditable = 'inherit';
             });
 
             $dataTable.on('click', 'button.delete', function () {
@@ -114,12 +131,12 @@
                     obj = JSON.parse(valuetext);
 
                     // Success! So clear an error if there was one before.
-                    $row.find('.label-danger').text('');
+                    $row.find('.label-error').text('');
                     $row.removeClass('error');
                 }
                 catch (err) {
                     console.log(valuetext, err.message);
-                    $row.find('.label-danger').text(err.message);
+                    $row.find('.label-error').text(err.message);
                     $row.addClass('error');
                 }
                 return obj;
@@ -160,42 +177,48 @@
                     return false;
                 }
 
-                var updates = {};
+                function rowsToUpdates($rows, updates) {
+                    $rows.each(function (i, val) {
+                        var $row = $(val);
+                        var rowKey = $row.find('.name').text();
 
-                var $changedRows = $('tr.changed').add('tr.added').add('tr.deleted');
-                $changedRows.each(function (i, val) {
-                    var $row = $(val);
-                    var rowKey = $row.find('.name').text();
+                        var keys = $row.parents('tr').map(function (i, val) {
+                            return $(val).children('.key').children('.name').text()
+                        }).get().reverse();
 
-                    var keys = $row.parents('tr').map(function (i, val) {
-                        return $(val).children('.key').children('.name').text()
-                    }).get().reverse();
-
-                    var thisUpdate = updates;
-                    for (var i = 0; i < keys.length; i++) {
-                        var key = keys[i];
-                        if (!(key in thisUpdate)) {
-                            thisUpdate = thisUpdate[key] = {};
+                        var thisUpdate = updates;
+                        for (var i = 0; i < keys.length; i++) {
+                            var key = keys[i];
+                            if (!(key in thisUpdate)) {
+                                thisUpdate = thisUpdate[key] = {};
+                            }
+                            else if (typeof thisUpdate[key] == 'object') {
+                                thisUpdate = thisUpdate[key];
+                            }
+                            else {
+                                console.log("Couldn't select into", updates, "by keys", keys);
+                                throw new Exception("No :(");
+                            }
                         }
-                        else if (typeof thisUpdate[key] == 'object') {
-                            thisUpdate = thisUpdate[key];
+
+                        if ($row.hasClass('deleted')) {
+                            thisUpdate[rowKey] = null;
                         }
                         else {
-                            console.log("Couldn't select into", updates, "by keys", keys);
-                            throw new Exception("No :(");
+                            var rowValue = $row.find('.valuetext').text();
+                            thisUpdate[rowKey] = JSON.parse(rowValue);
                         }
-                    }
+                    });
+                }
 
-                    if ($row.hasClass('deleted')) {
-                        thisUpdate[rowKey] = null;
-                    }
-                    else {
-                        var rowValue = $row.find('.valuetext').text();
-                        thisUpdate[rowKey] = JSON.parse(rowValue);
-                    }
-                });
+                var updated = {};
+                rowsToUpdates($('tr.changed').add('tr.added'), updated);
+                $('#updated_data').val(JSON.stringify(updated));
 
-                $('#updated_data').val(JSON.stringify(updates));
+                var deleted = {};
+                rowsToUpdates($('tr.deleted'), deleted);
+                $('#deleted_data').val(JSON.stringify(deleted));
+
             });
 
             function addTableTo($div, data) {
