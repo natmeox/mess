@@ -3,7 +3,6 @@ package mess
 import (
 	"fmt"
 	"log"
-	"reflect"
 	"strings"
 	"time"
 )
@@ -36,6 +35,48 @@ func NewThing() (thing *Thing) {
 	thing = &Thing{
 		Contents: make([]int, 0),
 		Table:    make(map[string]interface{}),
+	}
+	return
+}
+
+func (thing *Thing) ExitMatches(command string) bool {
+	if thing.Type != ExitThing {
+		return false
+	}
+
+	if strings.ToLower(thing.Name) == command {
+		log.Println("Found exit", thing, "has name", command, "!")
+		return true
+	}
+
+	// Check our aliases.
+	if aliases, ok := thing.Table["aliases"]; ok {
+		if aliasesList, ok := aliases.([]interface{}); ok {
+			for _, alias := range aliasesList {
+				if aliasStr, ok := alias.(string); ok {
+					if strings.ToLower(aliasStr) == command {
+						log.Println("Found exit", thing, "has alias", command, "!")
+						return true
+					}
+				}
+			}
+		} else {
+			log.Println("Found exit", thing, "but could not cast its aliases list to a []string; skipping")
+		}
+	} else {
+		log.Println("Found exit", thing, "but it has no aliases; skipping")
+	}
+
+	return false
+}
+
+func (thing *Thing) ExitTarget() (target *Thing) {
+	if targetId, ok := thing.Table["target"]; ok {
+		// JSON numbers are float64s. :|
+		if targetIdNum, ok := targetId.(float64); ok {
+			targetIdInt := int(targetIdNum)
+			target = World.ThingForId(targetIdInt)
+		}
 	}
 	return
 }
@@ -153,50 +194,24 @@ func GameClient(client *ClientPump, account *Account) {
 			for thisThing != nil {
 				for _, thingId := range thisThing.Contents {
 					thing := World.ThingForId(thingId)
-					if thing.Type != ExitThing {
-						log.Println("Found place contents", thing, "but it's not an Exit (",
-							ExitThing, "), it's a", thing.Type, "; skipping")
-						continue
-					}
-
-					if strings.ToLower(thing.Name) == command {
-						log.Println("Found exit", thing, "has name", command, "!")
+					if thing.ExitMatches(command) {
 						exit = thing
 						break FindThing
 					}
-					if aliases, ok := thing.Table["aliases"]; ok {
-						if aliasesList, ok := aliases.([]interface{}); ok {
-							for _, alias := range aliasesList {
-								if aliasStr, ok := alias.(string); ok {
-									if strings.ToLower(aliasStr) == command {
-										log.Println("Found exit", thing, "has alias", command, "!")
-										exit = thing
-										break FindThing
-									}
-								}
-							}
-						}
-					}
 				}
 
+				// No exits on thisThing matched. Try up the environment.
 				thisThing = World.ThingForId(thisThing.Parent)
 			}
 			if exit != nil {
-				if targetId, ok := exit.Table["target"]; ok {
-					// JSON numbers are float64s. :|
-					if targetIdNum, ok := targetId.(float64); ok {
-						target := World.ThingForId(int(targetIdNum))
-						World.MoveThing(char, target)
+				target := exit.ExitTarget()
+				if target != nil {
+					World.MoveThing(char, target)
 
-						// We moved so let's have a new look shall we.
-						GameLook(client, char, "")
+					// We moved so let's have a new look shall we.
+					GameLook(client, char, "")
 
-						break Command
-					} else {
-						log.Println("Exit", exit, "has a target", targetId, "that's not an int but a", reflect.TypeOf(targetId))
-					}
-				} else {
-					log.Println("Exit", exit, "doesn't have a target")
+					break Command
 				}
 			}
 
