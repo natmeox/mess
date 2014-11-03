@@ -102,6 +102,10 @@ func GameClient(client *ClientPump, account *Account) {
 	}
 	char.Client = client
 
+	// We just arrived from the welcome screen, so "look" around.
+	// TODO: motd?
+	GameLook(client, char, "")
+
 	for input := range client.ToServer {
 		parts := strings.SplitN(input, " ", 2)
 		command := strings.ToLower(parts[0])
