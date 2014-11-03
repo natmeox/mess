@@ -247,6 +247,15 @@ func WebThing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Make sure we're at the right URL.
+	pathType := pathParts[1]
+	typeName := thing.Type.String()
+	if pathType != typeName {
+		newPath := fmt.Sprintf("/%s/%d", typeName, thingId)
+		http.Redirect(w, r, newPath, http.StatusMovedPermanently)
+		return
+	}
+
 	// TODO: permit only some editing once there are permissions
 
 	if r.Method == "POST" {
@@ -260,7 +269,8 @@ func WebThing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RenderTemplate(w, r, "thing.html", map[string]interface{}{
+	templateName := fmt.Sprintf("%s.html", typeName)
+	RenderTemplate(w, r, templateName, map[string]interface{}{
 		"Title": thing.Name,
 		"Thing": thing,
 	})
@@ -308,6 +318,10 @@ func StartWeb() {
 	http.HandleFunc("/signout", WebSignOut)
 	http.Handle("/table/", RequireAccountFunc(WebTable))
 	http.Handle("/thing/", RequireAccountFunc(WebThing))
+	http.Handle("/player/", RequireAccountFunc(WebThing))
+	http.Handle("/place/", RequireAccountFunc(WebThing))
+	http.Handle("/exit/", RequireAccountFunc(WebThing))
+	http.Handle("/program/", RequireAccountFunc(WebThing))
 
 	indexHandler := RequireAccountFunc(WebIndex)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

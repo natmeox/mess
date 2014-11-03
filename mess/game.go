@@ -17,6 +17,20 @@ const (
 	ProgramThing
 )
 
+func (tt ThingType) String() string {
+	switch tt {
+		case PlaceThing:
+			return "place"
+		case PlayerThing:
+			return "player"
+		case ExitThing:
+			return "exit"
+		case ProgramThing:
+			return "program"
+	}
+	return "thing"
+}
+
 type Thing struct {
 	Id      int
 	Type    ThingType
