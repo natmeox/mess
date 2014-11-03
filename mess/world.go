@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/jmoiron/sqlx/types"
 	"log"
+	"strings"
 	"sync"
 )
 
@@ -20,11 +21,12 @@ type DatabaseWorld struct {
 }
 
 func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
-	thing = &Thing{
-		Id:       id,
-		Table:    make(map[string]interface{}),
-		Contents: make([]int, 0, 2),
+	if id == 0 {
+		return nil
 	}
+
+	thing = NewThing()
+	thing.Id = id
 
 	row := w.db.QueryRow("SELECT name, creator, created, parent, tabledata FROM thing WHERE id = $1",
 		id)
@@ -44,23 +46,48 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 		return nil
 	}
 
-	rows, err := w.db.Query("SELECT id FROM thing WHERE parent = $1", id)
+	// Find thing's contents.
+	contentRows, err := w.db.Query("SELECT id FROM thing WHERE parent = $1", id)
 	if err != nil {
 		log.Println("Error finding contents", id, ":", err.Error())
 		return nil
 	}
-	defer rows.Close()
-	for rows.Next() {
+	defer contentRows.Close()
+	for contentRows.Next() {
 		var childId int
-		if err := rows.Scan(&childId); err != nil {
+		if err := contentRows.Scan(&childId); err != nil {
 			log.Println("Error finding contents", id, ":", err.Error())
 			return nil
 		}
 
 		thing.Contents = append(thing.Contents, childId)
 	}
-	if err := rows.Err(); err != nil {
+	if err := contentRows.Err(); err != nil {
 		log.Println("Error finding contents", id, ":", err.Error())
+		return nil
+	}
+
+	// Find thing's exits.
+	exitRows, err := w.db.Query("SELECT command, source, target FROM exit WHERE source = $1", id)
+	if err != nil {
+		log.Println("Error finding exits for thing", id, ":", err.Error())
+		return nil
+	}
+	defer exitRows.Close()
+	for exitRows.Next() {
+		exit := Exit{}
+
+		if err := exitRows.Scan(&exit.Command, &exit.Source, &exit.Target); err != nil {
+			log.Println("Error finding exits for thing", id, ":", err.Error())
+			return nil
+		}
+
+		for _, exitCommand := range strings.Split(exit.Command, ";") {
+			thing.Exits[exitCommand] = &exit
+		}
+	}
+	if err := exitRows.Err(); err != nil {
+		log.Println("Error finding exits for thing", id, ":", err.Error())
 		return nil
 	}
 
@@ -68,12 +95,10 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 }
 
 func (w *DatabaseWorld) CreateThing(name string, creator *Thing, parent *Thing) (thing *Thing) {
-	thing = &Thing{
-		Name:     name,
-		Creator:  creator.Id,
-		Parent:   parent.Id,
-		Contents: make([]int, 0),
-	}
+	thing = NewThing()
+	thing.Name = name
+	thing.Creator = creator.Id
+	thing.Parent = parent.Id
 
 	row := w.db.QueryRow("INSERT INTO thing (name, creator, parent) VALUES ($1, $2, $3) RETURNING id, created",
 		thing.Name, thing.Creator, thing.Parent)
@@ -120,6 +145,10 @@ type ActiveWorld struct {
 func (w *ActiveWorld) ThingForId(id int) (thing *Thing) {
 	w.Lock()
 	defer w.Unlock()
+
+	if id == 0 {
+		return
+	}
 
 	thing, ok := w.Things[id]
 	if ok {

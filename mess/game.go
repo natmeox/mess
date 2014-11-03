@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+type Exit struct {
+	Command string
+	Source  int
+	Target  int
+}
+
 type Thing struct {
 	Id      int
 	Name    string
@@ -15,9 +21,19 @@ type Thing struct {
 
 	Client   *ClientPump
 	Parent   int
-	Contents []int // ID numbers
+	Contents []int            // ID numbers
+	Exits    map[string]*Exit // command -> Exit. Pointer so that all an exit's commands point to the same Exit.
 
 	Table map[string]interface{}
+}
+
+func NewThing() (thing *Thing) {
+	thing = &Thing{
+		Contents: make([]int, 0),
+		Exits:    make(map[string]*Exit),
+		Table:    make(map[string]interface{}),
+	}
+	return
 }
 
 var World WorldStore
@@ -115,6 +131,7 @@ func GameClient(client *ClientPump, account *Account) {
 		}
 		log.Println("Unused portion of command:", rest)
 
+	Command:
 		switch command {
 		case "quit":
 			client.ToClient <- "Thanks for spending time with the mess today!"
@@ -125,6 +142,22 @@ func GameClient(client *ClientPump, account *Account) {
 		case "say":
 			GameSay(client, char, rest)
 		default:
+			// Look up the environment for an exit with that command.
+			thisThing := char
+			for thisThing != nil {
+				if exit, ok := thisThing.Exits[command]; ok {
+					target := World.ThingForId(exit.Target)
+					World.MoveThing(char, target)
+
+					// We moved so let's have a new look shall we.
+					GameLook(client, char, "")
+
+					break Command
+				}
+				thisThing = World.ThingForId(thisThing.Parent)
+			}
+
+			// Didn't find such an exit.
 			client.ToClient <- fmt.Sprintf("Oops, not sure what you mean by \"%s\".", command)
 		}
 	}
