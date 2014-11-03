@@ -3,26 +3,31 @@ package mess
 import (
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"time"
 )
 
-type Exit struct {
-	Command string
-	Source  int
-	Target  int
-}
+type ThingType int
+
+const (
+	RegularThing ThingType = iota
+	PlaceThing
+	PlayerThing
+	ExitThing
+	ProgramThing
+)
 
 type Thing struct {
 	Id      int
+	Type    ThingType
 	Name    string
 	Creator int
 	Created time.Time
 
 	Client   *ClientPump
 	Parent   int
-	Contents []int            // ID numbers
-	Exits    map[string]*Exit // command -> Exit. Pointer so that all an exit's commands point to the same Exit.
+	Contents []int // ID numbers
 
 	Table map[string]interface{}
 }
@@ -30,7 +35,6 @@ type Thing struct {
 func NewThing() (thing *Thing) {
 	thing = &Thing{
 		Contents: make([]int, 0),
-		Exits:    make(map[string]*Exit),
 		Table:    make(map[string]interface{}),
 	}
 	return
@@ -143,18 +147,57 @@ func GameClient(client *ClientPump, account *Account) {
 			GameSay(client, char, rest)
 		default:
 			// Look up the environment for an exit with that command.
+			var exit *Thing
 			thisThing := char
+		FindThing:
 			for thisThing != nil {
-				if exit, ok := thisThing.Exits[command]; ok {
-					target := World.ThingForId(exit.Target)
-					World.MoveThing(char, target)
+				for _, thingId := range thisThing.Contents {
+					thing := World.ThingForId(thingId)
+					if thing.Type != ExitThing {
+						log.Println("Found place contents", thing, "but it's not an Exit (",
+							ExitThing, "), it's a", thing.Type, "; skipping")
+						continue
+					}
 
-					// We moved so let's have a new look shall we.
-					GameLook(client, char, "")
-
-					break Command
+					if strings.ToLower(thing.Name) == command {
+						log.Println("Found exit", thing, "has name", command, "!")
+						exit = thing
+						break FindThing
+					}
+					if aliases, ok := thing.Table["aliases"]; ok {
+						if aliasesList, ok := aliases.([]interface{}); ok {
+							for _, alias := range aliasesList {
+								if aliasStr, ok := alias.(string); ok {
+									if strings.ToLower(aliasStr) == command {
+										log.Println("Found exit", thing, "has alias", command, "!")
+										exit = thing
+										break FindThing
+									}
+								}
+							}
+						}
+					}
 				}
+
 				thisThing = World.ThingForId(thisThing.Parent)
+			}
+			if exit != nil {
+				if targetId, ok := exit.Table["target"]; ok {
+					// JSON numbers are float64s. :|
+					if targetIdNum, ok := targetId.(float64); ok {
+						target := World.ThingForId(int(targetIdNum))
+						World.MoveThing(char, target)
+
+						// We moved so let's have a new look shall we.
+						GameLook(client, char, "")
+
+						break Command
+					} else {
+						log.Println("Exit", exit, "has a target", targetId, "that's not an int but a", reflect.TypeOf(targetId))
+					}
+				} else {
+					log.Println("Exit", exit, "doesn't have a target")
+				}
 			}
 
 			// Didn't find such an exit.

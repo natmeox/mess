@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/jmoiron/sqlx/types"
 	"log"
-	"strings"
 	"sync"
 )
 
@@ -28,11 +27,11 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 	thing = NewThing()
 	thing.Id = id
 
-	row := w.db.QueryRow("SELECT name, creator, created, parent, tabledata FROM thing WHERE id = $1",
+	row := w.db.QueryRow("SELECT type, name, creator, created, parent, tabledata FROM thing WHERE id = $1",
 		id)
 	var parent sql.NullInt64
 	var tabledata types.JsonText
-	err := row.Scan(&thing.Name, &thing.Creator, &thing.Created, &parent, &tabledata)
+	err := row.Scan(&thing.Type, &thing.Name, &thing.Creator, &thing.Created, &parent, &tabledata)
 	if err != nil {
 		log.Println("Error finding thing", id, ":", err.Error())
 		return nil
@@ -64,30 +63,6 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 	}
 	if err := contentRows.Err(); err != nil {
 		log.Println("Error finding contents", id, ":", err.Error())
-		return nil
-	}
-
-	// Find thing's exits.
-	exitRows, err := w.db.Query("SELECT command, source, target FROM exit WHERE source = $1", id)
-	if err != nil {
-		log.Println("Error finding exits for thing", id, ":", err.Error())
-		return nil
-	}
-	defer exitRows.Close()
-	for exitRows.Next() {
-		exit := Exit{}
-
-		if err := exitRows.Scan(&exit.Command, &exit.Source, &exit.Target); err != nil {
-			log.Println("Error finding exits for thing", id, ":", err.Error())
-			return nil
-		}
-
-		for _, exitCommand := range strings.Split(exit.Command, ";") {
-			thing.Exits[exitCommand] = &exit
-		}
-	}
-	if err := exitRows.Err(); err != nil {
-		log.Println("Error finding exits for thing", id, ":", err.Error())
 		return nil
 	}
 
