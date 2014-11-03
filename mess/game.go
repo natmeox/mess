@@ -205,7 +205,9 @@ func GameClient(client *ClientPump, account *Account) {
 			}
 			if exit != nil {
 				target := exit.ExitTarget()
-				if target != nil {
+				// TODO: run a program if target.Type == ProgramThing
+				// TODO: move to target.Parent if PlayerThing or RegularThing
+				if target != nil && target.Type == PlaceThing {
 					World.MoveThing(char, target)
 
 					// We moved so let's have a new look shall we.
