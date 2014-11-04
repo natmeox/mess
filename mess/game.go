@@ -53,6 +53,30 @@ func NewThing() (thing *Thing) {
 	return
 }
 
+func (thing *Thing) GetParent() (*Thing) {
+	return World.ThingForId(thing.Parent)
+}
+
+func (thing *Thing) GetContents() (contents []*Thing) {
+	for _, thingId := range thing.Contents {
+		content := World.ThingForId(thingId)
+		if content.Type != ActionThing {
+			contents = append(contents, content)
+		}
+	}
+	return
+}
+
+func (thing *Thing) GetActions() (actions []*Thing) {
+	for _, thingId := range thing.Contents {
+		action := World.ThingForId(thingId)
+		if action.Type == ActionThing {
+			actions = append(actions, action)
+		}
+	}
+	return
+}
+
 func (thing *Thing) ActionMatches(command string) bool {
 	if thing.Type != ActionThing {
 		return false
