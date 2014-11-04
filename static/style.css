@@ -3395,6 +3395,83 @@ a.label:hover, a.thinglink:hover, a.label:focus, a.thinglink:focus {
   .label-danger[href]:hover, #dataTable [href].label-deleted:hover, #dataTable [href].label-error:hover, .label-danger[href]:focus, #dataTable [href].label-deleted:focus, #dataTable [href].label-error:focus {
     background-color: #c9302c; }
 
+@-webkit-keyframes progress-bar-stripes {
+  from {
+    background-position: 40px 0; }
+
+  to {
+    background-position: 0 0; } }
+@keyframes progress-bar-stripes {
+  from {
+    background-position: 40px 0; }
+
+  to {
+    background-position: 0 0; } }
+.progress {
+  overflow: hidden;
+  height: 20px;
+  margin-bottom: 20px;
+  background-color: whitesmoke;
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1); }
+
+.progress-bar {
+  float: left;
+  width: 0%;
+  height: 100%;
+  font-size: 12px;
+  line-height: 20px;
+  color: white;
+  text-align: center;
+  background-color: #428bca;
+  -webkit-box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  -webkit-transition: width 0.6s ease;
+  -o-transition: width 0.6s ease;
+  transition: width 0.6s ease; }
+
+.progress-striped .progress-bar,
+.progress-bar-striped {
+  background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+  background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+  background-size: 40px 40px; }
+
+.progress.active .progress-bar,
+.progress-bar.active {
+  -webkit-animation: progress-bar-stripes 2s linear infinite;
+  -o-animation: progress-bar-stripes 2s linear infinite;
+  animation: progress-bar-stripes 2s linear infinite; }
+
+.progress-bar-success {
+  background-color: #5cb85c; }
+  .progress-striped .progress-bar-success {
+    background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent); }
+
+.progress-bar-info {
+  background-color: #5bc0de; }
+  .progress-striped .progress-bar-info {
+    background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent); }
+
+.progress-bar-warning {
+  background-color: #f0ad4e; }
+  .progress-striped .progress-bar-warning {
+    background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent); }
+
+.progress-bar-danger {
+  background-color: #d9534f; }
+  .progress-striped .progress-bar-danger {
+    background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent); }
+
 .panel {
   margin-bottom: 20px;
   background-color: white;
@@ -3683,6 +3760,27 @@ a.label:hover, a.thinglink:hover, a.label:focus, a.thinglink:focus {
   .panel-danger > .panel-footer + .panel-collapse > .panel-body {
     border-bottom-color: #ebccd1; }
 
+.well {
+  min-height: 20px;
+  padding: 19px;
+  margin-bottom: 20px;
+  background-color: whitesmoke;
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05); }
+  .well blockquote {
+    border-color: #ddd;
+    border-color: rgba(0, 0, 0, 0.15); }
+
+.well-lg {
+  padding: 24px;
+  border-radius: 6px; }
+
+.well-sm {
+  padding: 9px;
+  border-radius: 3px; }
+
 .clearfix:before, .clearfix:after {
   content: " ";
   display: table; }
@@ -3736,9 +3834,14 @@ body {
 h3 {
   margin: 0; }
 
+.contents .thinglink, #thingPalette .thinglink {
+  margin-right: 1rem;
+  margin-bottom: 1rem; }
+
 .thinglink {
+  display: inline-block;
   font-size: inherit;
-  margin-right: 1rem; }
+  line-height: 1.25; }
   .thinglink.thinglink-thing {
     background-color: #0074d9; }
     .thinglink.thinglink-thing[href]:hover, .thinglink.thinglink-thing[href]:focus {
@@ -3765,15 +3868,26 @@ h3 {
       background-color: #2b2b2b; }
   .thinglink.thinglink-target {
     background-color: silver;
-    background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
-    background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
-    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.3) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.3) 75%, transparent 75%, transparent);
+    background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, 0.3) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.3) 75%, transparent 75%, transparent);
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.3) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.3) 75%, transparent 75%, transparent);
+    background-size: 40px 40px;
     padding-left: 1rem;
     padding-right: 1rem; }
     .thinglink.thinglink-target[href]:hover, .thinglink.thinglink-target[href]:focus {
       background-color: #a7a7a7; }
+  .thinglink.btn {
+    font-weight: inherit;
+    font-size: 14px;
+    /* normal btn font size */
+    line-height: 1rem; }
   .thinglink a:link, .thinglink a:hover, .thinglink a:visited, .thinglink a:active {
     color: inherit; }
+
+body.dragging .thinglink {
+  -webkit-animation: progress-bar-stripes 0.5s linear infinite;
+  -o-animation: progress-bar-stripes 0.5s linear infinite;
+  animation: progress-bar-stripes 0.5s linear infinite; }
 
 .table > thead > tr > td.added,
 .table > thead > tr > th.added, .table > thead > tr.added > td, .table > thead > tr.added > th,
@@ -3872,3 +3986,25 @@ h3 {
   display: inline-block; }
 #dataTable .error .label-error {
   display: inline-block; }
+
+#thingPalette {
+  position: fixed;
+  top: 1rem;
+  width: 14rem;
+  padding-left: 2rem;
+  cursor: hand;
+  right: -12rem;
+  transition: right 0.25s ease-in-out; }
+  #thingPalette #searchIcon {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem; }
+  #thingPalette.open {
+    right: 0rem; }
+
+#thingPalette + #content {
+  margin-right: 2rem;
+  transition: margin-right 0.25s ease-in-out; }
+
+#thingPalette.open + #content {
+  margin-right: 14rem; }

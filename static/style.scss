@@ -24,10 +24,16 @@ $player-bg: #85144B;
 $action-bg: #FFDC00;
 $program-bg: #39CCCC;
 
+.contents .thinglink, #thingPalette .thinglink {
+    margin-right: 1rem;
+    margin-bottom: 1rem;
+}
+
 .thinglink {
     @extend .label;
+    display: inline-block;
     font-size: inherit;
-    margin-right: 1rem;
+    line-height: 1.25;
 
     i { @extend .glyphicon; }
 
@@ -57,14 +63,24 @@ $program-bg: #39CCCC;
     }
     &.thinglink-target {
         @include label-variant(#c0c0c0);
-        @include gradient-striped;
+        @include gradient-striped($color: rgba(255,255,255,.30));
+        background-size: 40px 40px;
         padding-left: 1rem;
         padding-right: 1rem;
     }
 
+    &.btn {
+        font-weight: inherit;
+        font-size: 14px;  /* normal btn font size */
+        line-height: 1rem;
+    }
     a:link, a:hover, a:visited, a:active {
         color: inherit;
     }
+}
+
+body.dragging .thinglink {
+    @include animation(progress-bar-stripes 0.5s linear infinite);
 }
 
 @include table-row-variant('added', $state-success-bg);
@@ -149,4 +165,36 @@ $program-bg: #39CCCC;
             display: inline-block;
         }
     }
+}
+
+$paletteWidth: 14rem;
+
+#thingPalette {
+    position: fixed;
+    top: 1rem;
+    width: $paletteWidth;
+    padding-left: 2rem;
+    cursor: hand;
+
+    right: (2rem - $paletteWidth);
+    transition: right 0.25s ease-in-out;
+
+    #searchIcon {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+    }
+
+    &.open {
+        right: 0rem;
+    }
+}
+
+#thingPalette + #content {
+    margin-right: 2rem;
+    transition: margin-right 0.25s ease-in-out;
+}
+
+#thingPalette.open + #content {
+    margin-right: $paletteWidth;
 }

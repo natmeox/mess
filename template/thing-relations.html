@@ -1,6 +1,7 @@
 <div class="form-group">
     <label for="description" class="col-sm-2 control-label">Location</label>
     <div class="col-sm-10">
+        <input type="hidden" name="parent" value="{{ .Parent }}">
         <p class="form-control-static">
             {{ template "thinglink.html" .GetParent }}
         </p>
@@ -11,11 +12,21 @@
     <label class="col-sm-2 control-label">Contents</label>
     <div class="col-sm-10">
         <p class="form-control-static">
-            {{ range .GetContents }}
-                {{ template "thinglink.html" . }}
-            {{ end }}
-            <span class="thinglink thinglink-target">Drop to add</span>
+            <span class="contents">
+                {{ range .GetContents }}
+                    <input type="hidden" name="content" value="{{ .Id }}">
+                    {{ template "thinglink.html" . }}
+                {{ end }}
+            </span>
+            <span class="thinglink thinglink-target">
+                Drop to add</span>
         </p>
+
+            <button id="addContent" class="btn btn-primary">
+                <i class="glyphicon glyphicon-plus"></i>
+                Create thing
+            </button>
+
     </div>
 </div>
 
@@ -23,7 +34,7 @@
     <label class="col-sm-2 control-label">Actions</label>
     <div class="col-sm-10">
 
-        <table class="table table-actions">
+        <table id="actions" class="table table-actions">
             <thead>
                 <tr>
                     <th>Name</th>
@@ -38,6 +49,7 @@
                     </button>
                 </tr>
             </tfoot>
+            <tbody>
             {{ range .GetActions }}
                 <tr>
                     <td>{{ .Name }}</td>
@@ -46,7 +58,62 @@
                     </td>
                 </tr>
             {{ end }}
+            </tbody>
         </table>
 
     </div>
 </div>
+
+<script type="text/template" id="templateAddActionRow">
+    <tr class="added">
+        <td>
+            <span class="name" contentEditable></span>
+        </td>
+        <td>
+            <span class="thinglink thinglink-target">Drop to set</span>
+            <button id="addAction" class="btn btn-primary">
+                <i class="glyphicon glyphicon-plus"></i>
+                Create room
+            </button>
+        </td>
+    </tr>
+</script>
+
+<script>
+
+    function hookUpAddAction() {
+        $('#addAction').click(function (evt) {
+            evt.preventDefault();
+
+            var $row = $($('#templateAddActionRow').html());
+            var $table = $(this).parents('table').first();
+            $table.find('tbody').append($row);
+            $row.find('.name').focus();
+        });
+        $('#actions').on('keydown', 'span.name', function (evt) {
+            if (evt.which == 13) {
+                $(this).blur();
+                $('#addAction').focus();
+                return false;
+            }
+        });
+    }
+
+    $(hookUpAddAction);
+
+    function draggables() {
+        $('html,body').on('dragstart', '.thinglink', function (evt) {
+            $('body').addClass('dragging');
+        });
+        $('html,body').on('dragover', '.thinglink', function (evt) {
+            evt.preventDefault();
+            return false;
+        });
+        $('html,body').on('dragend', '.thinglink', function (evt) {
+            $('body').removeClass('dragging');
+        });
+    }
+
+    $(draggables);
+
+</script>

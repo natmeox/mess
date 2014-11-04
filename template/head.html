@@ -9,4 +9,25 @@
 
 </head><body>
 
-    <div class="container-fluid">
+    {{ if .Account }}
+        <div id="thingPalette" class="well">
+            <i id="searchIcon" class="glyphicon glyphicon-search"></i>
+
+            <div class="contents">
+                {{ range .PaletteItems }}
+                    {{ template "thinglink.html" . }}
+                {{ end }}
+            </div>
+
+            <!-- put the script inside the div cause we want #thingPalette+#content CSS selectors to work -->
+            <script>
+                $(function () {
+                    $('#thingPalette').click(function () {
+                        $(this).toggleClass('open');
+                    });
+                });
+            </script>
+        </div>
+    {{ end }}
+
+    <div id="content" class="container-fluid">
