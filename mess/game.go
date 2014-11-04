@@ -13,7 +13,7 @@ const (
 	RegularThing ThingType = iota
 	PlaceThing
 	PlayerThing
-	ExitThing
+	ActionThing
 	ProgramThing
 )
 
@@ -23,8 +23,8 @@ func (tt ThingType) String() string {
 			return "place"
 		case PlayerThing:
 			return "player"
-		case ExitThing:
-			return "exit"
+		case ActionThing:
+			return "action"
 		case ProgramThing:
 			return "program"
 	}
@@ -53,13 +53,13 @@ func NewThing() (thing *Thing) {
 	return
 }
 
-func (thing *Thing) ExitMatches(command string) bool {
-	if thing.Type != ExitThing {
+func (thing *Thing) ActionMatches(command string) bool {
+	if thing.Type != ActionThing {
 		return false
 	}
 
 	if strings.ToLower(thing.Name) == command {
-		log.Println("Found exit", thing, "has name", command, "!")
+		log.Println("Found action", thing, "has name", command, "!")
 		return true
 	}
 
@@ -69,22 +69,22 @@ func (thing *Thing) ExitMatches(command string) bool {
 			for _, alias := range aliasesList {
 				if aliasStr, ok := alias.(string); ok {
 					if strings.ToLower(aliasStr) == command {
-						log.Println("Found exit", thing, "has alias", command, "!")
+						log.Println("Found action", thing, "has alias", command, "!")
 						return true
 					}
 				}
 			}
 		} else {
-			log.Println("Found exit", thing, "but could not cast its aliases list to a []string; skipping")
+			log.Println("Found action", thing, "but could not cast its aliases list to a []string; skipping")
 		}
 	} else {
-		log.Println("Found exit", thing, "but it has no aliases; skipping")
+		log.Println("Found action", thing, "but it has no aliases; skipping")
 	}
 
 	return false
 }
 
-func (thing *Thing) ExitTarget() (target *Thing) {
+func (thing *Thing) ActionTarget() (target *Thing) {
 	if targetId, ok := thing.Table["target"]; ok {
 		// JSON numbers are float64s. :|
 		if targetIdNum, ok := targetId.(float64); ok {
@@ -201,24 +201,24 @@ func GameClient(client *ClientPump, account *Account) {
 		case "say":
 			GameSay(client, char, rest)
 		default:
-			// Look up the environment for an exit with that command.
-			var exit *Thing
+			// Look up the environment for an action with that command.
+			var action *Thing
 			thisThing := char
 		FindThing:
 			for thisThing != nil {
 				for _, thingId := range thisThing.Contents {
 					thing := World.ThingForId(thingId)
-					if thing.ExitMatches(command) {
-						exit = thing
+					if thing.ActionMatches(command) {
+						action = thing
 						break FindThing
 					}
 				}
 
-				// No exits on thisThing matched. Try up the environment.
+				// No actions on thisThing matched. Try up the environment.
 				thisThing = World.ThingForId(thisThing.Parent)
 			}
-			if exit != nil {
-				target := exit.ExitTarget()
+			if action != nil {
+				target := action.ActionTarget()
 				// TODO: run a program if target.Type == ProgramThing
 				// TODO: move to target.Parent if PlayerThing or RegularThing
 				if target != nil && target.Type == PlaceThing {
@@ -231,7 +231,7 @@ func GameClient(client *ClientPump, account *Account) {
 				}
 			}
 
-			// Didn't find such an exit.
+			// Didn't find such an action.
 			client.ToClient <- fmt.Sprintf("Oops, not sure what you mean by \"%s\".", command)
 		}
 	}

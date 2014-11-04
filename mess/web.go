@@ -320,7 +320,7 @@ func StartWeb() {
 	http.Handle("/thing/", RequireAccountFunc(WebThing))
 	http.Handle("/player/", RequireAccountFunc(WebThing))
 	http.Handle("/place/", RequireAccountFunc(WebThing))
-	http.Handle("/exit/", RequireAccountFunc(WebThing))
+	http.Handle("/action/", RequireAccountFunc(WebThing))
 	http.Handle("/program/", RequireAccountFunc(WebThing))
 
 	indexHandler := RequireAccountFunc(WebIndex)
