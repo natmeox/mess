@@ -29,12 +29,16 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 
 	row := w.db.QueryRow("SELECT type, name, creator, created, parent, tabledata FROM thing WHERE id = $1",
 		id)
+	var creator sql.NullInt64
 	var parent sql.NullInt64
 	var tabledata types.JsonText
-	err := row.Scan(&thing.Type, &thing.Name, &thing.Creator, &thing.Created, &parent, &tabledata)
+	err := row.Scan(&thing.Type, &thing.Name, &creator, &thing.Created, &parent, &tabledata)
 	if err != nil {
 		log.Println("Error finding thing", id, ":", err.Error())
 		return nil
+	}
+	if creator.Valid {
+		thing.Creator = int(creator.Int64)
 	}
 	if parent.Valid {
 		thing.Parent = int(parent.Int64)
