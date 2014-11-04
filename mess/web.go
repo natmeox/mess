@@ -260,9 +260,27 @@ func WebThing(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
 		// TODO: validate??
-		thing.Table["glance"] = r.PostFormValue("glance")
 		thing.Table["description"] = r.PostFormValue("description")
-		thing.Table["pronouns"] = r.PostFormValue("pronouns")
+		if thing.Type == PlayerThing {
+			thing.Table["glance"] = r.PostFormValue("glance")
+			thing.Table["pronouns"] = r.PostFormValue("pronouns")
+		}
+
+		parentIdStr := r.PostFormValue("parent")
+		parentId64, err := strconv.ParseInt(parentIdStr, 10, 64)
+		if err != nil {
+			// TODO: set a flash? cause an error? eh
+		} else {
+			parentId := int(parentId64)
+			newParent := World.ThingForId(parentId)
+			// TODO: does the viewer control newParent sufficiently to move the thing there?
+			if newParent == nil {
+				// TODO: set a flash? cause an error? eh
+			} else {
+				thing.Parent = parentId
+			}
+		}
+
 		World.SaveThing(thing)
 
 		http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
