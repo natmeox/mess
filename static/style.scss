@@ -14,12 +14,57 @@ body {
 	font-family: 'Source Sans Pro', sans-serif;
 }
 
-table.table-exits span.label {
-	font-size: inherit;
-}
-
 h3 {
 	margin: 0;
+}
+
+$thing-bg: #0074D9;
+$place-bg: #3D9970;
+$player-bg: #85144B;
+$action-bg: #FFDC00;
+$program-bg: #39CCCC;
+
+.thinglink {
+    @extend .label;
+    font-size: inherit;
+    margin-right: 1rem;
+
+    i { @extend .glyphicon; }
+
+    &.thinglink-thing {
+        @include label-variant($thing-bg);
+        i { @extend .glyphicon-star; }
+    }
+    &.thinglink-action {
+        @include label-variant($action-bg);
+        i { @extend .glyphicon-flash; }
+    }
+    &.thinglink-program {
+        @include label-variant($program-bg);
+        i { @extend .glyphicon-film; }
+    }
+    &.thinglink-place {
+        @include label-variant($place-bg);
+        i { @extend .glyphicon-map-marker; }
+    }
+    &.thinglink-player {
+        @include label-variant($player-bg);
+        i { @extend .glyphicon-heart; }
+    }
+    &.thinglink-nil {
+        @include label-variant(#444444);
+        i { @extend .glyphicon-ban-circle; }
+    }
+    &.thinglink-target {
+        @include label-variant(#c0c0c0);
+        @include gradient-striped;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    a:link, a:hover, a:visited, a:active {
+        color: inherit;
+    }
 }
 
 @include table-row-variant('added', $state-success-bg);

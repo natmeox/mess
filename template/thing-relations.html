@@ -1,0 +1,52 @@
+<div class="form-group">
+    <label for="description" class="col-sm-2 control-label">Location</label>
+    <div class="col-sm-10">
+        <p class="form-control-static">
+            {{ template "thinglink.html" .GetParent }}
+        </p>
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">Contents</label>
+    <div class="col-sm-10">
+        <p class="form-control-static">
+            {{ range .GetContents }}
+                {{ template "thinglink.html" . }}
+            {{ end }}
+            <span class="thinglink thinglink-target">Drop to add</span>
+        </p>
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">Actions</label>
+    <div class="col-sm-10">
+
+        <table class="table table-actions">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Target</th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr><td colspan="2">
+                    <button id="addAction" class="btn btn-primary">
+                        <i class="glyphicon glyphicon-plus"></i>
+                        Add action
+                    </button>
+                </tr>
+            </tfoot>
+            {{ range .GetActions }}
+                <tr>
+                    <td>{{ .Name }}</td>
+                    <td>
+                        {{ template "thinglink.html" .ActionTarget }}
+                    </td>
+                </tr>
+            {{ end }}
+        </table>
+
+    </div>
+</div>

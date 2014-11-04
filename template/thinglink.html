@@ -1,0 +1,7 @@
+{{ if . }}
+    <span class="thinglink thinglink-{{ .Type.String }}"><i></i>
+        <a href="/{{ .Type.String }}/{{ .Id }}">{{ .Name }}</a></span>
+{{ else }}
+    <span class="thinglink thinglink-nil"><i></i>
+        Nothing</span>
+{{ end }}

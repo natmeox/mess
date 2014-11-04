@@ -183,7 +183,7 @@ th {
   font-family: 'Glyphicons Halflings';
   src: url("fonts/bootstrap/glyphicons-halflings-regular.eot");
   src: url("fonts/bootstrap/glyphicons-halflings-regular.eot?#iefix") format("embedded-opentype"), url("fonts/bootstrap/glyphicons-halflings-regular.woff") format("woff"), url("fonts/bootstrap/glyphicons-halflings-regular.ttf") format("truetype"), url("fonts/bootstrap/glyphicons-halflings-regular.svg#glyphicons_halflingsregular") format("svg"); }
-.glyphicon {
+.glyphicon, .thinglink i {
   position: relative;
   top: 1px;
   display: inline-block;
@@ -225,10 +225,10 @@ th {
 .glyphicon-search:before {
   content: "\e003"; }
 
-.glyphicon-heart:before {
+.glyphicon-heart:before, .thinglink.thinglink-player i:before {
   content: "\e005"; }
 
-.glyphicon-star:before {
+.glyphicon-star:before, .thinglink.thinglink-thing i:before {
   content: "\e006"; }
 
 .glyphicon-star-empty:before {
@@ -237,7 +237,7 @@ th {
 .glyphicon-user:before {
   content: "\e008"; }
 
-.glyphicon-film:before {
+.glyphicon-film:before, .thinglink.thinglink-program i:before {
   content: "\e009"; }
 
 .glyphicon-th-large:before {
@@ -393,7 +393,7 @@ th {
 .glyphicon-picture:before {
   content: "\e060"; }
 
-.glyphicon-map-marker:before {
+.glyphicon-map-marker:before, .thinglink.thinglink-place i:before {
   content: "\e062"; }
 
 .glyphicon-adjust:before {
@@ -477,7 +477,7 @@ th {
 .glyphicon-ok-circle:before {
   content: "\e089"; }
 
-.glyphicon-ban-circle:before {
+.glyphicon-ban-circle:before, .thinglink.thinglink-nil i:before {
   content: "\e090"; }
 
 .glyphicon-arrow-left:before {
@@ -681,7 +681,7 @@ th {
 .glyphicon-log-in:before {
   content: "\e161"; }
 
-.glyphicon-flash:before {
+.glyphicon-flash:before, .thinglink.thinglink-action i:before {
   content: "\e162"; }
 
 .glyphicon-log-out:before {
@@ -3343,7 +3343,7 @@ input[type="button"].btn-block {
     .navbar-inverse .btn-link[disabled]:hover, .navbar-inverse .btn-link[disabled]:focus, fieldset[disabled] .navbar-inverse .btn-link:hover, fieldset[disabled] .navbar-inverse .btn-link:focus {
       color: #444444; }
 
-.label {
+.label, .thinglink {
   display: inline;
   padding: .2em .6em .3em;
   font-size: 75%;
@@ -3354,13 +3354,13 @@ input[type="button"].btn-block {
   white-space: nowrap;
   vertical-align: baseline;
   border-radius: .25em; }
-  .label:empty {
+  .label:empty, .thinglink:empty {
     display: none; }
-  .btn .label {
+  .btn .label, .btn .thinglink {
     position: relative;
     top: -1px; }
 
-a.label:hover, a.label:focus {
+a.label:hover, a.thinglink:hover, a.label:focus, a.thinglink:focus {
   color: white;
   text-decoration: none;
   cursor: pointer; }
@@ -3733,11 +3733,47 @@ body {
   margin-top: 1rem;
   font-family: 'Source Sans Pro', sans-serif; }
 
-table.table-exits span.label {
-  font-size: inherit; }
-
 h3 {
   margin: 0; }
+
+.thinglink {
+  font-size: inherit;
+  margin-right: 1rem; }
+  .thinglink.thinglink-thing {
+    background-color: #0074d9; }
+    .thinglink.thinglink-thing[href]:hover, .thinglink.thinglink-thing[href]:focus {
+      background-color: #0059a6; }
+  .thinglink.thinglink-action {
+    background-color: #ffdc00; }
+    .thinglink.thinglink-action[href]:hover, .thinglink.thinglink-action[href]:focus {
+      background-color: #ccb000; }
+  .thinglink.thinglink-program {
+    background-color: #39cccc; }
+    .thinglink.thinglink-program[href]:hover, .thinglink.thinglink-program[href]:focus {
+      background-color: #2ba7a7; }
+  .thinglink.thinglink-place {
+    background-color: #3d9970; }
+    .thinglink.thinglink-place[href]:hover, .thinglink.thinglink-place[href]:focus {
+      background-color: #2e7555; }
+  .thinglink.thinglink-player {
+    background-color: #85144b; }
+    .thinglink.thinglink-player[href]:hover, .thinglink.thinglink-player[href]:focus {
+      background-color: #590d32; }
+  .thinglink.thinglink-nil {
+    background-color: #444444; }
+    .thinglink.thinglink-nil[href]:hover, .thinglink.thinglink-nil[href]:focus {
+      background-color: #2b2b2b; }
+  .thinglink.thinglink-target {
+    background-color: silver;
+    background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    padding-left: 1rem;
+    padding-right: 1rem; }
+    .thinglink.thinglink-target[href]:hover, .thinglink.thinglink-target[href]:focus {
+      background-color: #a7a7a7; }
+  .thinglink a:link, .thinglink a:hover, .thinglink a:visited, .thinglink a:active {
+    color: inherit; }
 
 .table > thead > tr > td.added,
 .table > thead > tr > th.added, .table > thead > tr.added > td, .table > thead > tr.added > th,
@@ -3817,7 +3853,7 @@ h3 {
   display: none; }
 #dataTable .valuetext {
   font-family: 'Inconsolata', monospace; }
-#dataTable .label {
+#dataTable .label, #dataTable .thinglink {
   margin-left: 1rem;
   display: none; }
 #dataTable .added .label-added {
