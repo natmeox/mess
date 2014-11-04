@@ -46,6 +46,14 @@ func SetAccountForRequest(w http.ResponseWriter, r *http.Request, acc *Account) 
 }
 
 func RenderTemplate(w http.ResponseWriter, r *http.Request, templateName string, templateContext map[string]interface{}) {
+	var paletteItems []*Thing
+	for i := 0; i < 10; i++ {
+		thing := World.ThingForId(i)
+		if thing != nil {
+			paletteItems = append(paletteItems, thing)
+		}
+	}
+
 	context := map[string]interface{}{
 		"CsrfToken": nosurf.Token(r),
 		"Config": map[string]interface{}{
@@ -54,6 +62,7 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, templateName string,
 			"HostName":    Config.HostName,
 		},
 		"Account": context.Get(r, ContextKeyAccount), // could be nil
+		"PaletteItems": paletteItems,
 	}
 	// If e.g. Account was provided by the caller, it overrides our default one.
 	for k, v := range templateContext {
