@@ -20,39 +20,39 @@ const (
 
 func ThingTypeForName(name string) ThingType {
 	switch name {
-		case "place":
-			return PlaceThing
-		case "player":
-			return PlayerThing
-		case "action":
-			return ActionThing
-		case "program":
-			return ProgramThing
+	case "place":
+		return PlaceThing
+	case "player":
+		return PlayerThing
+	case "action":
+		return ActionThing
+	case "program":
+		return ProgramThing
 	}
 	return RegularThing
 }
 
 func (tt ThingType) String() string {
 	switch tt {
-		case PlaceThing:
-			return "place"
-		case PlayerThing:
-			return "player"
-		case ActionThing:
-			return "action"
-		case ProgramThing:
-			return "program"
+	case PlaceThing:
+		return "place"
+	case PlayerThing:
+		return "player"
+	case ActionThing:
+		return "action"
+	case ProgramThing:
+		return "program"
 	}
 	return "thing"
 }
 
 type Thing struct {
-	Id      ThingId
-	Type    ThingType
-	Name    string
-	Creator ThingId
-	Created time.Time
-	Owner ThingId
+	Id         ThingId
+	Type       ThingType
+	Name       string
+	Creator    ThingId
+	Created    time.Time
+	Owner      ThingId
 	AccessList []ThingId
 
 	Client   *ClientPump
@@ -70,15 +70,15 @@ func NewThing() (thing *Thing) {
 	return
 }
 
-func (thing *Thing) GetParent() (*Thing) {
+func (thing *Thing) GetParent() *Thing {
 	return World.ThingForId(thing.Parent)
 }
 
-func (thing *Thing) GetOwner() (*Thing) {
+func (thing *Thing) GetOwner() *Thing {
 	return World.ThingForId(thing.Owner)
 }
 
-func (thing *Thing) GetAccessList() ([]*Thing) {
+func (thing *Thing) GetAccessList() []*Thing {
 	log.Println("Converting thing", thing.Id, "'s AccessList []ThingId", thing.AccessList, "into a []*Thing")
 	accessors := make([]*Thing, len(thing.AccessList))
 	for i := 0; i < len(thing.AccessList); i++ {

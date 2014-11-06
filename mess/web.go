@@ -61,7 +61,7 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, templateName string,
 			"ServiceName": Config.ServiceName,
 			"HostName":    Config.HostName,
 		},
-		"Account": context.Get(r, ContextKeyAccount), // could be nil
+		"Account":      context.Get(r, ContextKeyAccount), // could be nil
 		"PaletteItems": paletteItems,
 	}
 	// If e.g. Account was provided by the caller, it overrides our default one.
