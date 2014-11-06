@@ -2,16 +2,17 @@ package mess
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/jmoiron/sqlx/types"
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 )
-
-type ThingIdList []ThingId
 
 var thingIdListExp = regexp.MustCompile(`\d+`)
 
@@ -38,6 +39,17 @@ func (l *ThingIdList) Scan(src interface{}) error {
 	return nil
 }
 
+func (l *ThingIdList) Value() (driver.Value, error) {
+	thingIds := make([]interface{}, len(*l))
+	for i, id := range *l {
+		thingIds[i] = int(id)
+	}
+	spacedList := fmt.Sprint(thingIds...)
+	commaedList := strings.Replace(spacedList, " ", ",", -1)
+	arrayLiteral := fmt.Sprintf("{%s}", commaedList)
+	return []byte(arrayLiteral), nil
+}
+
 type WorldStore interface {
 	ThingForId(id ThingId) *Thing
 	CreateThing(name string, creator *Thing, parent *Thing) (thing *Thing)
@@ -57,15 +69,15 @@ func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 	thing = NewThing()
 	thing.Id = id
 
-	row := w.db.QueryRow("SELECT type, name, creator, created, owner, accesslist, parent, tabledata FROM thing WHERE id = $1",
+	row := w.db.QueryRow("SELECT type, name, creator, created, owner, adminlist, allowlist, denylist, parent, tabledata FROM thing WHERE id = $1",
 		id)
 	var typetext string
 	var creator sql.NullInt64
 	var owner sql.NullInt64
-	var accessList ThingIdList
 	var parent sql.NullInt64
 	var tabledata types.JsonText
-	err := row.Scan(&typetext, &thing.Name, &creator, &thing.Created, &owner, &accessList, &parent, &tabledata)
+	err := row.Scan(&typetext, &thing.Name, &creator, &thing.Created, &owner,
+		&thing.AdminList, &thing.AllowList, &thing.DenyList, &parent, &tabledata)
 	if err != nil {
 		log.Println("Error finding thing", id, ":", err.Error())
 		return nil
@@ -77,7 +89,6 @@ func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 	if owner.Valid {
 		thing.Owner = ThingId(owner.Int64)
 	}
-	thing.AccessList = []ThingId(accessList)
 	if parent.Valid {
 		thing.Parent = ThingId(parent.Int64)
 	}

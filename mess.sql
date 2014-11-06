@@ -7,7 +7,9 @@ CREATE TABLE thing (
     creator INTEGER REFERENCES thing DEFERRABLE INITIALLY DEFERRED,
     created TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
     owner INTEGER REFERENCES thing DEFERRABLE INITIALLY DEFERRED,
-    accesslist INTEGER[] NOT NULL DEFAULT ARRAY[]::integer[],
+    adminlist INTEGER[] NOT NULL DEFAULT ARRAY[]::integer[],
+    allowlist INTEGER[] NOT NULL DEFAULT ARRAY[]::integer[],
+    denylist INTEGER[] NOT NULL DEFAULT ARRAY[]::integer[],
     parent INTEGER REFERENCES thing,
     tabledata JSON NOT NULL DEFAULT '{}'::json
 );
