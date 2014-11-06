@@ -39,9 +39,9 @@ func (l *ThingIdList) Scan(src interface{}) error {
 	return nil
 }
 
-func (l *ThingIdList) Value() (driver.Value, error) {
-	thingIds := make([]interface{}, len(*l))
-	for i, id := range *l {
+func (l ThingIdList) Value() (driver.Value, error) {
+	thingIds := make([]interface{}, len(l))
+	for i, id := range l {
 		thingIds[i] = int(id)
 	}
 	spacedList := fmt.Sprint(thingIds...)
@@ -157,8 +157,9 @@ func (w *DatabaseWorld) SaveThing(thing *Thing) (ok bool) {
 		return false
 	}
 	// TODO: save the access list
-	_, err = w.db.Exec("UPDATE thing SET name = $1, parent = $2, owner = $3, tabledata = $4 WHERE id = $5",
-		thing.Name, thing.Parent, thing.Owner, types.JsonText(tabletext), thing.Id)
+	_, err = w.db.Exec("UPDATE thing SET name = $1, parent = $2, owner = $3, adminlist = $4, denylist = $5, tabledata = $6 WHERE id = $7",
+		thing.Name, thing.Parent, thing.Owner, thing.AdminList, thing.DenyList,
+		types.JsonText(tabletext), thing.Id)
 	if err != nil {
 		log.Println("Error saving a thing", thing.Id, ":", err.Error())
 		return false

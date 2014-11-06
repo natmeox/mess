@@ -16,7 +16,10 @@ import (
 
 type key int
 
-const ContextKeyAccount key = 0
+const (
+	ContextKeyAccount key = iota
+	ContextKeyThing
+)
 
 var store *sessions.CookieStore
 var getTemplate func(string) *template.Template
@@ -138,6 +141,8 @@ func WebSignOut(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+var webThingMux *http.ServeMux
+
 func mergeMapInto(source map[string]interface{}, target map[string]interface{}) map[string]interface{} {
 	for key, value := range source {
 		switch value.(type) {
@@ -178,21 +183,8 @@ func deleteMapFrom(source map[string]interface{}, target map[string]interface{})
 	return target
 }
 
-func WebTable(w http.ResponseWriter, r *http.Request) {
-	pathParts := strings.Split(r.URL.Path, "/")
-	thingIdStr := pathParts[2]
-	thingId, err := strconv.ParseInt(thingIdStr, 10, 64)
-	if err != nil {
-		log.Println("Error converting /thing/ argument", thingIdStr, "to number:", err.Error())
-		http.NotFound(w, r)
-		return
-	}
-	thing := World.ThingForId(ThingId(thingId))
-	if thing == nil {
-		// regular ol' expected not-found this time
-		http.NotFound(w, r)
-		return
-	}
+func WebThingTable(w http.ResponseWriter, r *http.Request) {
+	thing := context.Get(r, ContextKeyThing).(*Thing)
 
 	// TODO: permit only some editing once there are permissions
 
@@ -203,7 +195,7 @@ func WebTable(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// aw carp
 			// TODO: set a flash?
-			http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
+			http.Redirect(w, r, fmt.Sprintf("%stable", thing.GetURL()), http.StatusSeeOther)
 			return
 		}
 
@@ -213,7 +205,7 @@ func WebTable(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// aw carp
 			// TODO: set a flash?
-			http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
+			http.Redirect(w, r, fmt.Sprintf("%stable", thing.GetURL()), http.StatusSeeOther)
 			return
 		}
 
@@ -221,7 +213,7 @@ func WebTable(w http.ResponseWriter, r *http.Request) {
 		thing.Table = deleteMapFrom(deletes, thing.Table)
 		World.SaveThing(thing)
 
-		http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("%stable", thing.GetURL()), http.StatusSeeOther)
 		return
 	}
 
@@ -240,30 +232,70 @@ func WebTable(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func WebThing(w http.ResponseWriter, r *http.Request) {
-	pathParts := strings.Split(r.URL.Path, "/")
-	thingIdStr := pathParts[2]
-	thingId, err := strconv.ParseInt(thingIdStr, 10, 64)
-	if err != nil {
-		log.Println("Error converting /thing/ argument", thingIdStr, "to number:", err.Error())
-		http.NotFound(w, r)
-		return
-	}
-	thing := World.ThingForId(ThingId(thingId))
-	if thing == nil {
-		// regular ol' expected not-found this time
-		http.NotFound(w, r)
+func WebThingProgram(w http.ResponseWriter, r *http.Request) {
+	http.NotFound(w, r)
+}
+
+func WebThingAccess(w http.ResponseWriter, r *http.Request) {
+	account := context.Get(r, ContextKeyAccount).(*Account)
+	thing := context.Get(r, ContextKeyThing).(*Thing)
+
+	// Only the owner can edit the access lists.
+	switch {
+	case thing.Type == PlayerThing && thing.Id == account.Character:
+	case thing.Type != PlayerThing && thing.Owner == account.Character:
+	default:
+		http.Error(w, "No access to access lists", http.StatusForbidden)
 		return
 	}
 
-	// Make sure we're at the right URL.
-	pathType := pathParts[1]
-	typeName := thing.Type.String()
-	if pathType != typeName {
-		newPath := fmt.Sprintf("/%s/%d", typeName, thingId)
-		http.Redirect(w, r, newPath, http.StatusMovedPermanently)
+	if r.Method == "POST" {
+		changed := false
+
+		if adminsText := r.PostFormValue("admins"); adminsText != "" {
+			var adminIds []ThingId
+			err := json.Unmarshal([]byte(adminsText), &adminIds)
+			if err != nil {
+				// TODO: set a flash
+				http.Redirect(w, r, fmt.Sprintf("%saccess", thing.GetURL()), http.StatusSeeOther)
+				return
+			}
+
+			thing.AdminList = adminIds
+			changed = true
+		}
+
+		// TODO: handle allows
+
+		if deniedText := r.PostFormValue("denied"); deniedText != "" {
+			var deniedIds []ThingId
+			err := json.Unmarshal([]byte(deniedText), &deniedIds)
+			if err != nil {
+				// TODO: set a flash
+				http.Redirect(w, r, fmt.Sprintf("%saccess", thing.GetURL()), http.StatusSeeOther)
+				return
+			}
+
+			thing.DenyList = deniedIds
+			changed = true
+		}
+
+		if changed {
+			World.SaveThing(thing)
+		}
+
+		http.Redirect(w, r, fmt.Sprintf("%saccess", thing.GetURL()), http.StatusSeeOther)
 		return
 	}
+
+	RenderTemplate(w, r, "access.html", map[string]interface{}{
+		"Title": thing.Name,
+		"Thing": thing,
+	})
+}
+
+func WebThingEdit(w http.ResponseWriter, r *http.Request) {
+	thing := context.Get(r, ContextKeyThing).(*Thing)
 
 	// TODO: permit only some editing once there are permissions
 
@@ -292,15 +324,48 @@ func WebThing(w http.ResponseWriter, r *http.Request) {
 
 		World.SaveThing(thing)
 
-		http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
+		http.Redirect(w, r, thing.GetURL(), http.StatusSeeOther)
 		return
 	}
 
+	typeName := thing.Type.String()
 	templateName := fmt.Sprintf("%s.html", typeName)
 	RenderTemplate(w, r, templateName, map[string]interface{}{
-		"Title": thing.Name,
+		"Title": fmt.Sprintf("Edit access lists - %s", thing.Name),
 		"Thing": thing,
 	})
+}
+
+func WebThing(w http.ResponseWriter, r *http.Request) {
+	// path: <0>/<1: type name>/<2: thing id>/<3+: further page arguments>
+	pathParts := strings.Split(r.URL.Path, "/")
+	thingIdStr := pathParts[2]
+	thingId, err := strconv.ParseInt(thingIdStr, 10, 64)
+	if err != nil {
+		log.Println("Error converting /thing/ argument", thingIdStr, "to number:", err.Error())
+		http.NotFound(w, r)
+		return
+	}
+	thing := World.ThingForId(ThingId(thingId))
+	if thing == nil {
+		// regular ol' expected not-found this time
+		http.NotFound(w, r)
+		return
+	}
+
+	// Make sure we're at the right URL.
+	pathType := pathParts[1]
+	typeName := thing.Type.String()
+	if len(pathParts) < 4 || pathType != typeName {
+		newPath := fmt.Sprintf("/%s/%d/", typeName, thingId)
+		http.Redirect(w, r, newPath, http.StatusMovedPermanently)
+		return
+	}
+
+	context.Set(r, ContextKeyThing, thing)
+
+	r.URL.Path = fmt.Sprintf("/%s", strings.Join(pathParts[3:], "/"))
+	webThingMux.ServeHTTP(w, r)
 }
 
 func WebIndex(w http.ResponseWriter, r *http.Request) {
@@ -343,12 +408,19 @@ func StartWeb() {
 
 	http.HandleFunc("/signin", WebSignIn)
 	http.HandleFunc("/signout", WebSignOut)
-	http.Handle("/table/", RequireAccountFunc(WebTable))
-	http.Handle("/thing/", RequireAccountFunc(WebThing))
-	http.Handle("/player/", RequireAccountFunc(WebThing))
-	http.Handle("/place/", RequireAccountFunc(WebThing))
-	http.Handle("/action/", RequireAccountFunc(WebThing))
-	http.Handle("/program/", RequireAccountFunc(WebThing))
+
+	webThingHandler := RequireAccountFunc(WebThing)
+	http.Handle("/thing/", webThingHandler)
+	http.Handle("/player/", webThingHandler)
+	http.Handle("/place/", webThingHandler)
+	http.Handle("/action/", webThingHandler)
+	http.Handle("/program/", webThingHandler)
+
+	webThingMux = http.NewServeMux()
+	webThingMux.HandleFunc("/", WebThingEdit)
+	webThingMux.HandleFunc("/table", WebThingTable)
+	webThingMux.HandleFunc("/program", WebThingProgram)
+	webThingMux.HandleFunc("/access", WebThingAccess)
 
 	indexHandler := RequireAccountFunc(WebIndex)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

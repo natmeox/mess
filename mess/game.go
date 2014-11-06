@@ -82,6 +82,10 @@ func NewThing() (thing *Thing) {
 	return
 }
 
+func (thing *Thing) GetURL() string {
+	return fmt.Sprintf("/%s/%d/", thing.Type.String(), thing.Id)
+}
+
 func (thing *Thing) GetParent() *Thing {
 	return World.ThingForId(thing.Parent)
 }
