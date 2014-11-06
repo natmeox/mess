@@ -9,7 +9,7 @@ import (
 )
 
 type WorldStore interface {
-	ThingForId(id int) *Thing
+	ThingForId(id ThingId) *Thing
 	CreateThing(name string, creator *Thing, parent *Thing) (thing *Thing)
 	MoveThing(thing *Thing, target *Thing) (ok bool)
 	SaveThing(thing *Thing) (ok bool)
@@ -19,7 +19,7 @@ type DatabaseWorld struct {
 	db *sql.DB
 }
 
-func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
+func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 	if id == 0 {
 		return nil
 	}
@@ -40,10 +40,10 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 	}
 	thing.Type = ThingTypeForName(typetext)
 	if creator.Valid {
-		thing.Creator = int(creator.Int64)
+		thing.Creator = ThingId(creator.Int64)
 	}
 	if parent.Valid {
-		thing.Parent = int(parent.Int64)
+		thing.Parent = ThingId(parent.Int64)
 	}
 	err = tabledata.Unmarshal(&thing.Table)
 	if err != nil {
@@ -59,7 +59,7 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 	}
 	defer contentRows.Close()
 	for contentRows.Next() {
-		var childId int
+		var childId ThingId
 		if err := contentRows.Scan(&childId); err != nil {
 			log.Println("Error finding contents", id, ":", err.Error())
 			return nil
@@ -119,11 +119,11 @@ func (w *DatabaseWorld) SaveThing(thing *Thing) (ok bool) {
 
 type ActiveWorld struct {
 	sync.Mutex
-	Things map[int]*Thing
+	Things map[ThingId]*Thing
 	Next   WorldStore
 }
 
-func (w *ActiveWorld) ThingForId(id int) (thing *Thing) {
+func (w *ActiveWorld) ThingForId(id ThingId) (thing *Thing) {
 	w.Lock()
 	defer w.Unlock()
 

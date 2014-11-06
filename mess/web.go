@@ -48,7 +48,7 @@ func SetAccountForRequest(w http.ResponseWriter, r *http.Request, acc *Account) 
 func RenderTemplate(w http.ResponseWriter, r *http.Request, templateName string, templateContext map[string]interface{}) {
 	var paletteItems []*Thing
 	for i := 0; i < 10; i++ {
-		thing := World.ThingForId(i)
+		thing := World.ThingForId(ThingId(i))
 		if thing != nil {
 			paletteItems = append(paletteItems, thing)
 		}
@@ -187,7 +187,7 @@ func WebTable(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	thing := World.ThingForId(int(thingId))
+	thing := World.ThingForId(ThingId(thingId))
 	if thing == nil {
 		// regular ol' expected not-found this time
 		http.NotFound(w, r)
@@ -249,7 +249,7 @@ func WebThing(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	thing := World.ThingForId(int(thingId))
+	thing := World.ThingForId(ThingId(thingId))
 	if thing == nil {
 		// regular ol' expected not-found this time
 		http.NotFound(w, r)
@@ -280,7 +280,7 @@ func WebThing(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// TODO: set a flash? cause an error? eh
 		} else {
-			parentId := int(parentId64)
+			parentId := ThingId(parentId64)
 			newParent := World.ThingForId(parentId)
 			// TODO: does the viewer control newParent sufficiently to move the thing there?
 			if newParent == nil {

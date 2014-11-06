@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+type ThingId int
 type ThingType int
 
 const (
@@ -46,22 +47,22 @@ func (tt ThingType) String() string {
 }
 
 type Thing struct {
-	Id      int
+	Id      ThingId
 	Type    ThingType
 	Name    string
-	Creator int
+	Creator ThingId
 	Created time.Time
 
 	Client   *ClientPump
-	Parent   int
-	Contents []int // ID numbers
+	Parent   ThingId
+	Contents []ThingId
 
 	Table map[string]interface{}
 }
 
 func NewThing() (thing *Thing) {
 	thing = &Thing{
-		Contents: make([]int, 0),
+		Contents: make([]ThingId, 0),
 		Table:    make(map[string]interface{}),
 	}
 	return
@@ -126,7 +127,7 @@ func (thing *Thing) ActionTarget() (target *Thing) {
 	if targetId, ok := thing.Table["target"]; ok {
 		// JSON numbers are float64s. :|
 		if targetIdNum, ok := targetId.(float64); ok {
-			targetIdInt := int(targetIdNum)
+			targetIdInt := ThingId(targetIdNum)
 			target = World.ThingForId(targetIdInt)
 		}
 	}
@@ -144,7 +145,7 @@ func GameInit() {
 	}
 
 	World = &ActiveWorld{
-		Things: make(map[int]*Thing),
+		Things: make(map[ThingId]*Thing),
 		Next:   db,
 	}
 	Accounts = db

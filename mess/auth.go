@@ -16,7 +16,7 @@ type AccountStore interface {
 type Account struct {
 	LoginName    string
 	PasswordHash string
-	Character    int
+	Character    ThingId
 	Created      time.Time
 }
 
