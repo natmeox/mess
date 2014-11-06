@@ -11,11 +11,11 @@
 
     {{ if eq .Thing.Owner .Account.Character }}
         <div class="form-group">
-            <label for="description" class="col-sm-2 control-label">Access List</label>
+            <label for="description" class="col-sm-2 control-label">Admins</label>
             <div class="col-sm-10">
                 <p class="form-control-static">
                     <span class="contents">
-                        {{ range .Thing.GetAccessList }}
+                        {{ range .Thing.AdminList.Things }}
                             <input type="hidden" name="content" value="{{ .Id }}">
                             {{ template "thinglink.html" . }}
                         {{ end }}
