@@ -1,5 +1,5 @@
 {{ if . }}
-    <span class="thinglink thinglink-{{ .Type.String }}" draggable="true"><i></i>
+    <span class="thinglink thinglink-{{ .Type.String }}" data-thingid="{{ .Id }}" data-thingtype="{{ .Type.String }}" draggable="true"><i></i>
         <a href="/{{ .Type.String }}/{{ .Id }}">{{ .Name }}</a></span>
 {{ else }}
     <span class="thinglink thinglink-nil"><i></i>

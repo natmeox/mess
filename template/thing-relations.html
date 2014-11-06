@@ -8,25 +8,6 @@
             </p>
         </div>
     </div>
-
-    {{ if eq .Thing.Owner .Account.Character }}
-        <div class="form-group">
-            <label for="description" class="col-sm-2 control-label">Admins</label>
-            <div class="col-sm-10">
-                <p class="form-control-static">
-                    <span class="contents">
-                        {{ range .Thing.AdminList.Things }}
-                            <input type="hidden" name="content" value="{{ .Id }}">
-                            {{ template "thinglink.html" . }}
-                        {{ end }}
-                    </span>
-                    <span class="thinglink thinglink-target">
-                        Drop to add</span>
-                </p>
-            </div>
-        </div>
-    {{ end }}
-
 {{ end }}
 
 <div class="form-group">
@@ -131,20 +112,5 @@
     }
 
     $(hookUpAddAction);
-
-    function draggables() {
-        $('html,body').on('dragstart', '.thinglink', function (evt) {
-            $('body').addClass('dragging');
-        });
-        $('html,body').on('dragover', '.thinglink', function (evt) {
-            evt.preventDefault();
-            return false;
-        });
-        $('html,body').on('dragend', '.thinglink', function (evt) {
-            $('body').removeClass('dragging');
-        });
-    }
-
-    $(draggables);
 
 </script>

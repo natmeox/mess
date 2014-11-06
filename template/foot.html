@@ -1,3 +1,27 @@
     </div>
 
+    <script src="/static/javascripts/bootstrap/tooltip.js"></script>
+    <script src="/static/javascripts/bootstrap/popover.js"></script>
+    <script>
+
+        var lastDragged;
+
+        function draggableThingLinks() {
+            $('html,body').on('dragstart', '.thinglink', function (evt) {
+                $('body').addClass('dragging');
+                lastDragged = evt.target;
+            });
+            $('html,body').on('dragover', '.thinglink', function (evt) {
+                evt.preventDefault();
+                return false;
+            });
+            $('html,body').on('dragend', '.thinglink', function (evt) {
+                $('body').removeClass('dragging');
+            });
+        }
+
+        $(draggableThingLinks);
+
+    </script>
+
 </body></html>
