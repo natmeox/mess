@@ -52,6 +52,8 @@ type Thing struct {
 	Name    string
 	Creator ThingId
 	Created time.Time
+	Owner ThingId
+	AccessList []ThingId
 
 	Client   *ClientPump
 	Parent   ThingId
@@ -70,6 +72,19 @@ func NewThing() (thing *Thing) {
 
 func (thing *Thing) GetParent() (*Thing) {
 	return World.ThingForId(thing.Parent)
+}
+
+func (thing *Thing) GetOwner() (*Thing) {
+	return World.ThingForId(thing.Owner)
+}
+
+func (thing *Thing) GetAccessList() ([]*Thing) {
+	log.Println("Converting thing", thing.Id, "'s AccessList []ThingId", thing.AccessList, "into a []*Thing")
+	accessors := make([]*Thing, len(thing.AccessList))
+	for i := 0; i < len(thing.AccessList); i++ {
+		accessors[i] = World.ThingForId(thing.AccessList[i])
+	}
+	return accessors
 }
 
 func (thing *Thing) GetContents() (contents []*Thing) {

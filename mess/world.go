@@ -3,10 +3,40 @@ package mess
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"github.com/jmoiron/sqlx/types"
 	"log"
+	"regexp"
+	"strconv"
 	"sync"
 )
+
+type ThingIdList []ThingId
+
+var thingIdListExp = regexp.MustCompile(`\d+`)
+
+func (l *ThingIdList) Scan(src interface{}) error {
+	asBytes, ok := src.([]byte)
+	if !ok {
+		return errors.New("Scan source was not []byte")
+	}
+
+	matches := thingIdListExp.FindAllStringSubmatch(string(asBytes), -1)
+	log.Println("Found submatches", matches, "(len", len(matches), ") while scanning id list")
+	results := make([]ThingId, len(matches))
+	for i, match := range matches {
+		value64, err := strconv.ParseInt(match[0], 0, 64)
+		if err != nil {
+			return err
+		}
+
+		results[i] = ThingId(value64)
+	}
+
+	// Assign over ourself in place.
+	(*l) = results
+	return nil
+}
 
 type WorldStore interface {
 	ThingForId(id ThingId) *Thing
@@ -27,13 +57,15 @@ func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 	thing = NewThing()
 	thing.Id = id
 
-	row := w.db.QueryRow("SELECT type, name, creator, created, parent, tabledata FROM thing WHERE id = $1",
+	row := w.db.QueryRow("SELECT type, name, creator, created, owner, accesslist, parent, tabledata FROM thing WHERE id = $1",
 		id)
+	var typetext string
 	var creator sql.NullInt64
+	var owner sql.NullInt64
+	var accessList ThingIdList
 	var parent sql.NullInt64
 	var tabledata types.JsonText
-	var typetext string
-	err := row.Scan(&typetext, &thing.Name, &creator, &thing.Created, &parent, &tabledata)
+	err := row.Scan(&typetext, &thing.Name, &creator, &thing.Created, &owner, &accessList, &parent, &tabledata)
 	if err != nil {
 		log.Println("Error finding thing", id, ":", err.Error())
 		return nil
@@ -42,6 +74,10 @@ func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 	if creator.Valid {
 		thing.Creator = ThingId(creator.Int64)
 	}
+	if owner.Valid {
+		thing.Owner = ThingId(owner.Int64)
+	}
+	thing.AccessList = []ThingId(accessList)
 	if parent.Valid {
 		thing.Parent = ThingId(parent.Int64)
 	}
@@ -79,10 +115,11 @@ func (w *DatabaseWorld) CreateThing(name string, creator *Thing, parent *Thing) 
 	thing = NewThing()
 	thing.Name = name
 	thing.Creator = creator.Id
+	thing.Owner = creator.Id
 	thing.Parent = parent.Id
 
-	row := w.db.QueryRow("INSERT INTO thing (name, type, creator, parent) VALUES ($1, $2, $3, $4) RETURNING id, created",
-		thing.Name, thing.Type.String(), thing.Creator, thing.Parent)
+	row := w.db.QueryRow("INSERT INTO thing (name, type, creator, owner, parent) VALUES ($1, $2, $3, $4, $5) RETURNING id, created",
+		thing.Name, thing.Type.String(), thing.Creator, thing.Owner, thing.Parent)
 	err := row.Scan(&thing.Id, &thing.Created)
 	if err != nil {
 		log.Println("Error creating a thing", name, ":", err.Error())
@@ -108,8 +145,9 @@ func (w *DatabaseWorld) SaveThing(thing *Thing) (ok bool) {
 		log.Println("Error serializing table data for thing", thing.Id, ":", err.Error())
 		return false
 	}
-	_, err = w.db.Exec("UPDATE thing SET name = $1, parent = $2, tabledata = $3 WHERE id = $4",
-		thing.Name, thing.Parent, types.JsonText(tabletext), thing.Id)
+	// TODO: save the access list
+	_, err = w.db.Exec("UPDATE thing SET name = $1, parent = $2, owner = $3, tabledata = $4 WHERE id = $5",
+		thing.Name, thing.Parent, thing.Owner, types.JsonText(tabletext), thing.Id)
 	if err != nil {
 		log.Println("Error saving a thing", thing.Id, ":", err.Error())
 		return false
