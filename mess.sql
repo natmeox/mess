@@ -1,6 +1,8 @@
+CREATE TYPE thingtype AS ENUM ('thing', 'place', 'player', 'action', 'program');
+
 CREATE TABLE thing (
     id SERIAL PRIMARY KEY,
-    type SMALLINT NOT NULL DEFAULT 0,
+    type thingtype NOT NULL DEFAULT 'thing',
     name TEXT NOT NULL,
     creator INTEGER REFERENCES thing DEFERRABLE INITIALLY DEFERRED,
     created TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),

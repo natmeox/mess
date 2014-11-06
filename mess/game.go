@@ -17,6 +17,20 @@ const (
 	ProgramThing
 )
 
+func ThingTypeForName(name string) ThingType {
+	switch name {
+		case "place":
+			return PlaceThing
+		case "player":
+			return PlayerThing
+		case "action":
+			return ActionThing
+		case "program":
+			return ProgramThing
+	}
+	return RegularThing
+}
+
 func (tt ThingType) String() string {
 	switch tt {
 		case PlaceThing:

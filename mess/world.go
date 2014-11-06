@@ -32,11 +32,13 @@ func (w *DatabaseWorld) ThingForId(id int) (thing *Thing) {
 	var creator sql.NullInt64
 	var parent sql.NullInt64
 	var tabledata types.JsonText
-	err := row.Scan(&thing.Type, &thing.Name, &creator, &thing.Created, &parent, &tabledata)
+	var typetext string
+	err := row.Scan(&typetext, &thing.Name, &creator, &thing.Created, &parent, &tabledata)
 	if err != nil {
 		log.Println("Error finding thing", id, ":", err.Error())
 		return nil
 	}
+	thing.Type = ThingTypeForName(typetext)
 	if creator.Valid {
 		thing.Creator = int(creator.Int64)
 	}
@@ -79,8 +81,8 @@ func (w *DatabaseWorld) CreateThing(name string, creator *Thing, parent *Thing) 
 	thing.Creator = creator.Id
 	thing.Parent = parent.Id
 
-	row := w.db.QueryRow("INSERT INTO thing (name, creator, parent) VALUES ($1, $2, $3) RETURNING id, created",
-		thing.Name, thing.Creator, thing.Parent)
+	row := w.db.QueryRow("INSERT INTO thing (name, type, creator, parent) VALUES ($1, $2, $3, $4) RETURNING id, created",
+		thing.Name, thing.Type.String(), thing.Creator, thing.Parent)
 	err := row.Scan(&thing.Id, &thing.Created)
 	if err != nil {
 		log.Println("Error creating a thing", name, ":", err.Error())
