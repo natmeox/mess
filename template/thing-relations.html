@@ -1,21 +1,40 @@
-{{ if ne .Type 2 }}
-<div class="form-group">
-    <label for="description" class="col-sm-2 control-label">Owner</label>
-    <div class="col-sm-10">
-        <input type="hidden" name="parent" value="{{ .Owner }}">
-        <p class="form-control-static">
-            {{ template "thinglink.html" .GetOwner }}
-        </p>
+{{ if ne .Thing.Type 2 }}
+    <div class="form-group">
+        <label for="description" class="col-sm-2 control-label">Owner</label>
+        <div class="col-sm-10">
+            <input type="hidden" name="parent" value="{{ .Thing.Owner }}">
+            <p class="form-control-static">
+                {{ template "thinglink.html" .Thing.GetOwner }}
+            </p>
+        </div>
     </div>
-</div>
+
+    {{ if eq .Thing.Owner .Account.Character }}
+        <div class="form-group">
+            <label for="description" class="col-sm-2 control-label">Access List</label>
+            <div class="col-sm-10">
+                <p class="form-control-static">
+                    <span class="contents">
+                        {{ range .Thing.GetAccessList }}
+                            <input type="hidden" name="content" value="{{ .Id }}">
+                            {{ template "thinglink.html" . }}
+                        {{ end }}
+                    </span>
+                    <span class="thinglink thinglink-target">
+                        Drop to add</span>
+                </p>
+            </div>
+        </div>
+    {{ end }}
+
 {{ end }}
 
 <div class="form-group">
     <label for="description" class="col-sm-2 control-label">Location</label>
     <div class="col-sm-10">
-        <input type="hidden" name="parent" value="{{ .Parent }}">
+        <input type="hidden" name="parent" value="{{ .Thing.Parent }}">
         <p class="form-control-static">
-            {{ template "thinglink.html" .GetParent }}
+            {{ template "thinglink.html" .Thing.GetParent }}
         </p>
     </div>
 </div>
@@ -25,7 +44,7 @@
     <div class="col-sm-10">
         <p class="form-control-static">
             <span class="contents">
-                {{ range .GetContents }}
+                {{ range .Thing.GetContents }}
                     <input type="hidden" name="content" value="{{ .Id }}">
                     {{ template "thinglink.html" . }}
                 {{ end }}
@@ -62,7 +81,7 @@
                 </tr>
             </tfoot>
             <tbody>
-            {{ range .GetActions }}
+            {{ range .Thing.GetActions }}
                 <tr>
                     <td>{{ .Name }}</td>
                     <td>
