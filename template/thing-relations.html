@@ -1,3 +1,15 @@
+{{ if ne .Type 2 }}
+<div class="form-group">
+    <label for="description" class="col-sm-2 control-label">Owner</label>
+    <div class="col-sm-10">
+        <input type="hidden" name="parent" value="{{ .Owner }}">
+        <p class="form-control-static">
+            {{ template "thinglink.html" .GetOwner }}
+        </p>
+    </div>
+</div>
+{{ end }}
+
 <div class="form-group">
     <label for="description" class="col-sm-2 control-label">Location</label>
     <div class="col-sm-10">
