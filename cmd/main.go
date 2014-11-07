@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	_ "github.com/bmizerany/pq"
-	"github.com/natmeox/mess/mess"
+	"github.com/natmeox/mess"
 	"log"
 	"os"
 )
