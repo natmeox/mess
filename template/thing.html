@@ -1,0 +1,50 @@
+{{ template "head.html" . }}
+
+    {{ template "navbar.html" . }}
+
+    <form method="post" class="form form-horizontal" role="form">
+        <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <h3>Editing “{{ .Thing.Name }}”</h3>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <a href="table" class="btn btn-primary">
+                    <i class="glyphicon glyphicon-list"></i> Edit all data</a>
+                <a href="program" class="btn btn-primary">
+                    <i class="glyphicon glyphicon-film"></i> Edit program</a>
+                <a href="access" class="btn btn-primary">
+                    <i class="glyphicon glyphicon-tower"></i> Edit access lists</a>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="name" class="col-sm-2 control-label">Name</label>
+            <div class="col-sm-10">
+                <input id="name" name="name" value="{{ .Thing.Name }}" class="form-control">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="description" class="col-sm-2 control-label">Description</label>
+            <div class="col-sm-10">
+                <textarea id="description" name="description" class="form-control" rows="7">{{ .Thing.Table.description }}</textarea>
+            </div>
+        </div>
+
+        {{ template "thing-relations.html" . }}
+
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button class="btn btn-primary">Save</button>
+                <a href="/" class="btn btn-cancel">Cancel</a>
+            </div>
+        </div>
+
+    </form>
+
+{{ template "foot.html" . }}

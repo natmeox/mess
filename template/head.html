@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html><head>
+    <meta charset="utf-8">
+    <title>{{.Title}}</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="//brick.a.ssl.fastly.net/Source+Sans+Pro:400,500,400i,500i,600,600i/Inconsolata:500">
+    <script src="/static/jquery-1.11.1.min.js"></script>
+
+</head><body>
+
+    {{ if .Account }}
+        <div id="thingPalette" class="well">
+            <i id="searchIcon" class="glyphicon glyphicon-search"></i>
+
+            <div class="contents">
+                {{ range .PaletteItems }}
+                    {{ template "thinglink.html" . }}
+                {{ end }}
+            </div>
+
+            <!-- put the script inside the div cause we want #thingPalette+#content CSS selectors to work -->
+            <script>
+                $(function () {
+                    $('#thingPalette').click(function () {
+                        $(this).toggleClass('open');
+                    });
+                });
+            </script>
+        </div>
+    {{ end }}
+
+    <div id="content" class="container-fluid">

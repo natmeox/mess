@@ -1,0 +1,146 @@
+{{ template "head.html" . }}
+
+    {{ template "navbar.html" . }}
+
+    <form method="post" class="form form-horizontal" role="form">
+        <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <h3>Editing access lists for “<a href="{{ .Thing.GetURL }}">{{ .Thing.Name }}</a>”</h3>
+            </div>
+        </div>
+
+        <div id="ownerFormGroup" class="form-group">
+            <label for="description" class="col-sm-2 control-label">Owner</label>
+            <div class="col-sm-10">
+                <input type="hidden" name="parent" value="">
+                <p class="form-control-static">
+                    {{ template "thinglink.html" .Thing.GetOwner }}
+                </p>
+                <p class="help-block">
+                    This is you. Drop someone else here to give this thing to someone else — but only the owner can edit these access lists.
+                </p>
+            </div>
+        </div>
+
+        <div id="adminFormGroup" class="form-group">
+            <label for="description" class="col-sm-2 control-label">Admins</label>
+            <div class="col-sm-10">
+                <input type="hidden" id="admins" name="admins" value="">
+                <p class="form-control-static">
+                    <span class="contents">
+                        {{ range .Thing.AdminList.Things }}
+                            {{ template "thinglink.html" . }}
+                        {{ end }}
+                    </span>
+                    <span class="thinglink thinglink-target">
+                        Drop to add</span>
+                </p>
+                <p class="help-block">
+                    Admin players can edit all the thing's settings &amp; data like you can (but not these access lists).
+                </p>
+            </div>
+        </div>
+
+        <div id="deniedFormGroup" class="form-group">
+            <label for="description" class="col-sm-2 control-label">Denied</label>
+            <div class="col-sm-10">
+                <input type="hidden" id="denied" name="denied" value="">
+                <p class="form-control-static">
+                    <span class="contents">
+                        {{ range .Thing.DenyList.Things }}
+                            {{ template "thinglink.html" . }}
+                        {{ end }}
+                    </span>
+                    <span class="thinglink thinglink-target">
+                        Drop to add</span>
+                </p>
+                <p class="help-block">
+                    {{ if eq .Thing.Type 1 }}
+                        Denied players are unable to enter the room through any means.
+                    {{ else if eq .Thing.Type 2 }}
+                        Denied players are unable to contact, speak or interact with you directly.
+                    {{ else if eq .Thing.Type 3 }}
+                        Denied players are unable to use the action.
+                    {{ else if eq .Thing.Type 4 }}
+                        Denied players are unable to cause the program to run through actions or other means.
+                    {{ else }}
+                        Denied players are unable to take or interact with the thing.
+                    {{ end }}
+                </p>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button class="btn btn-primary">Save</button>
+                <a href="/" class="btn btn-cancel">Cancel</a>
+            </div>
+        </div>
+
+    </form>
+
+    <script>
+
+        function droppableTargets() {
+
+            jQuery.fn.popAlert = function (message) {
+                var $this = this;
+                $this.popover({
+                    trigger: 'manual',
+                    content: message
+                });
+                $('html,body').one('click', function () {
+                    $this.popover('destroy');
+                });
+                $this.popover('show');
+            };
+
+            $('#deniedFormGroup .thinglink-target').on('drop', function (evt) {
+                var $this = $(this);
+                var $dropped = $(lastDragged);
+
+                // Is it a player?
+                console.log("Dropped is a", $dropped);
+                if ($dropped.data('thingtype') != 'player') {
+                    $this.popAlert("Only players can be added to this list.");
+                    return true;
+                }
+                console.log("Dropped is a", $dropped.data('thingtype'), ", yay");
+
+                // Is it the owner?
+                var droppedId = $dropped.data('thingid');
+                console.log("Dropped is player #", droppedId);
+                var $owner = $('#ownerFormGroup .thinglink-player');
+                if (droppedId == $owner.data('thingid')) {
+                    $this.popAlert("You can't deny access to the owner of the thing.");
+                    return true;
+                }
+
+                // Is it an admin?
+                var $admins = $('#adminFormGroup .thinglink-player');
+                var $matchingAdmins = $admins.filter(function () {
+                    return $(this).data('thingid') == droppedId;
+                });
+                if ($matchingAdmins.size()) {
+                    $this.popAlert("You can't deny access to an admin of the thing.");
+                    return true;
+                }
+
+                // Add the dropped thing to the denied list.
+                $('#deniedFormGroup .contents').append($dropped.clone(true, false));
+
+                // Update the form field value.
+                var $contents = $('#deniedFormGroup .contents .thinglink');
+                var ids = $contents.map(function () { return $(this).data('thingid'); });
+                $('#denied').val(JSON.stringify(ids.toArray()));
+            });
+
+        }
+
+        $(droppableTargets);
+
+    </script>
+
+{{ template "foot.html" . }}

@@ -1,0 +1,200 @@
+@import "bootstrap";
+
+/*
+ *  mess CSS
+ */
+
+html, body {
+	font-size: 1rem;
+}
+
+body {
+	margin-top: 1rem;
+
+	font-family: 'Source Sans Pro', sans-serif;
+}
+
+h3 {
+	margin: 0;
+}
+
+$thing-bg: #0074D9;
+$place-bg: #3D9970;
+$player-bg: #85144B;
+$action-bg: #FFDC00;
+$program-bg: #39CCCC;
+
+.contents .thinglink, #thingPalette .thinglink {
+    margin-right: 1rem;
+    margin-bottom: 1rem;
+}
+
+.thinglink {
+    @extend .label;
+    display: inline-block;
+    font-size: inherit;
+    line-height: 1.25;
+
+    i { @extend .glyphicon; }
+
+    &.thinglink-thing {
+        @include label-variant($thing-bg);
+        i { @extend .glyphicon-star; }
+    }
+    &.thinglink-action {
+        @include label-variant($action-bg);
+        i { @extend .glyphicon-flash; }
+    }
+    &.thinglink-program {
+        @include label-variant($program-bg);
+        i { @extend .glyphicon-film; }
+    }
+    &.thinglink-place {
+        @include label-variant($place-bg);
+        i { @extend .glyphicon-map-marker; }
+    }
+    &.thinglink-player {
+        @include label-variant($player-bg);
+        i { @extend .glyphicon-heart; }
+    }
+    &.thinglink-nil {
+        @include label-variant(#444444);
+        i { @extend .glyphicon-ban-circle; }
+    }
+    &.thinglink-target {
+        @include label-variant(#c0c0c0);
+        @include gradient-striped($color: rgba(255,255,255,.30));
+        background-size: 40px 40px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    &.btn {
+        font-weight: inherit;
+        font-size: 14px;  /* normal btn font size */
+        line-height: 1rem;
+    }
+    a:link, a:hover, a:visited, a:active {
+        color: inherit;
+    }
+}
+
+body.dragging .thinglink {
+    @include animation(progress-bar-stripes 0.5s linear infinite);
+}
+
+@include table-row-variant('added', $state-success-bg);
+@include table-row-variant('changed', $state-warning-bg);
+@include table-row-variant('deleted', $state-danger-bg);
+@include table-row-variant('error', $state-danger-bg);
+
+#dataTable {
+    table {
+        margin: (2*$table-cell-padding + $line-height-computed) 0 0;
+    }
+
+    .key {
+        white-space: nowrap;
+    }
+
+    .actions {
+        visibility: hidden;
+    }
+    td:hover > .actions {
+        visibility: visible;
+    }
+
+    .leaf button.add {
+        display: none;
+    }
+    button.revert {
+        display: none;
+    }
+
+    .valuetext {
+        font-family: 'Inconsolata', monospace;
+    }
+    .label {
+        margin-left: 1rem;
+        display: none;
+    }
+
+    .label-deleted, .label-error {
+        @extend .label-danger;
+    }
+    .label-changed {
+        @extend .label-warning;
+    }
+    .label-added {
+        @extend .label-success;
+    }
+
+    .added {
+        .label-added {
+            display: inline-block;
+        }
+    }
+
+    .deleted {
+        text-decoration: line-through;
+
+        button.delete {
+            display: none;
+        }
+        button.revert {
+            display: inline-block;
+        }
+
+        .label-deleted {
+            display: inline-block;
+        }
+    }
+
+    .changed {
+        button.revert {
+            display: inline-block;
+        }
+
+        .label-changed {
+            display: inline-block;
+        }
+    }
+
+    .error {
+        .label-error {
+            display: inline-block;
+        }
+    }
+}
+
+$paletteWidth: 14rem;
+
+#thingPalette {
+    position: fixed;
+    top: 1rem;
+    width: $paletteWidth;
+    padding-left: 2rem;
+    cursor: hand;
+
+    right: (2rem - $paletteWidth);
+    transition: right 0.25s ease-in-out;
+
+    #searchIcon {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+    }
+
+    &.open {
+        right: 0rem;
+    }
+}
+
+#thingPalette + #content {
+    margin-right: 2rem;
+    transition: margin-right 0.25s ease-in-out;
+}
+
+#thingPalette.open + #content {
+    margin-right: $paletteWidth;
+}

@@ -1,0 +1,116 @@
+{{ if ne .Thing.Type 2 }}
+    <div class="form-group">
+        <label for="description" class="col-sm-2 control-label">Owner</label>
+        <div class="col-sm-10">
+            <input type="hidden" name="parent" value="{{ .Thing.Owner }}">
+            <p class="form-control-static">
+                {{ template "thinglink.html" .Thing.GetOwner }}
+            </p>
+        </div>
+    </div>
+{{ end }}
+
+<div class="form-group">
+    <label for="description" class="col-sm-2 control-label">Location</label>
+    <div class="col-sm-10">
+        <input type="hidden" name="parent" value="{{ .Thing.Parent }}">
+        <p class="form-control-static">
+            {{ template "thinglink.html" .Thing.GetParent }}
+        </p>
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">Contents</label>
+    <div class="col-sm-10">
+        <p class="form-control-static">
+            <span class="contents">
+                {{ range .Thing.GetContents }}
+                    <input type="hidden" name="content" value="{{ .Id }}">
+                    {{ template "thinglink.html" . }}
+                {{ end }}
+            </span>
+            <span class="thinglink thinglink-target">
+                Drop to add</span>
+        </p>
+
+            <button id="addContent" class="btn btn-primary">
+                <i class="glyphicon glyphicon-plus"></i>
+                Create thing
+            </button>
+
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">Actions</label>
+    <div class="col-sm-10">
+
+        <table id="actions" class="table table-actions">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Target</th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr><td colspan="2">
+                    <button id="addAction" class="btn btn-primary">
+                        <i class="glyphicon glyphicon-plus"></i>
+                        Add action
+                    </button>
+                </tr>
+            </tfoot>
+            <tbody>
+            {{ range .Thing.GetActions }}
+                <tr>
+                    <td>{{ .Name }}</td>
+                    <td>
+                        {{ template "thinglink.html" .ActionTarget }}
+                    </td>
+                </tr>
+            {{ end }}
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+<script type="text/template" id="templateAddActionRow">
+    <tr class="added">
+        <td>
+            <span class="name" contentEditable></span>
+        </td>
+        <td>
+            <span class="thinglink thinglink-target">Drop to set</span>
+            <button id="addAction" class="btn btn-primary">
+                <i class="glyphicon glyphicon-plus"></i>
+                Create room
+            </button>
+        </td>
+    </tr>
+</script>
+
+<script>
+
+    function hookUpAddAction() {
+        $('#addAction').click(function (evt) {
+            evt.preventDefault();
+
+            var $row = $($('#templateAddActionRow').html());
+            var $table = $(this).parents('table').first();
+            $table.find('tbody').append($row);
+            $row.find('.name').focus();
+        });
+        $('#actions').on('keydown', 'span.name', function (evt) {
+            if (evt.which == 13) {
+                $(this).blur();
+                $('#addAction').focus();
+                return false;
+            }
+        });
+    }
+
+    $(hookUpAddAction);
+
+</script>
