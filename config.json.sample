@@ -1,0 +1,9 @@
+{
+    "Debug": true,
+    "ServiceName": "New Mess",
+    "HostName": "example.com",
+    "Dsn": "dbname=mess sslmode=disable",
+    "GameAddress": "localhost:8080",
+    "WebAddress": "localhost:8888",
+    "CookieSecret": "secret"
+}
