@@ -14,13 +14,22 @@
         <div id="ownerFormGroup" class="form-group">
             <label class="col-sm-2 control-label">Owner</label>
             <div class="col-sm-10">
-                <input type="hidden" name="parent" value="">
-                <p class="form-control-static">
-                    {{ template "thinglink.html" .Thing.GetOwner }}
-                </p>
-                <p class="help-block">
-                    This is you. Drop someone else here to give this thing to someone else — but only the owner can edit these access lists.
-                </p>
+                {{ if eq .Thing.Id .Account.Character }}
+                    <p class="form-control-static">
+                        {{ template "thinglink.html" .Thing.GetOwner }}
+                    </p>
+                    <p class="help-block">
+                        Players own themselves, so you can’t change who owns you.
+                    </p>
+                {{ else }}
+                    <input type="hidden" name="parent" value="">
+                    <p class="form-control-static">
+                        {{ template "thinglink.html" .Thing.GetOwner }}
+                    </p>
+                    <p class="help-block">
+                        This is you. Drop someone else here to give this thing to someone else — but only the owner can edit these access lists.
+                    </p>
+                {{ end }}
             </div>
         </div>
 
@@ -38,7 +47,13 @@
                         Drop to add</span>
                 </p>
                 <p class="help-block">
-                    Admin players can edit all the thing's settings &amp; data like you can (but not these access lists).
+                    {{ if eq .Thing.Type 1 }}
+                        Admin players can edit the room’s actions, as well as its other settings &amp; data. They can’t edit these access lists.
+                    {{ else if eq .Thing.Type 2 }}
+                        Admin players can edit all your settings &amp; data. They can’t edit these access lists.
+                    {{ else }}
+                        Admin players can edit all the thing’s settings &amp; data. They can’t edit these access lists.
+                    {{ end }}
                 </p>
             </div>
         </div>
