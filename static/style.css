@@ -4090,6 +4090,9 @@ body {
 h3 {
   margin: 0; }
 
+.form-button-bar button.btn, .form-button-bar a.btn {
+  margin-right: 1rem; }
+
 .contents .thinglink, #thingPalette .thinglink {
   margin-right: 1rem;
   margin-bottom: 1rem; }

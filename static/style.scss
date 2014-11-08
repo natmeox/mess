@@ -18,6 +18,12 @@ h3 {
 	margin: 0;
 }
 
+.form-button-bar {
+    button.btn, a.btn {
+        margin-right: 1rem;
+    }
+}
+
 $thing-bg: #0074D9;
 $place-bg: #3D9970;
 $player-bg: #85144B;
