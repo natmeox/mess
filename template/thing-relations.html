@@ -1,6 +1,6 @@
 {{ if ne .Thing.Type 2 }}
     <div class="form-group">
-        <label for="description" class="col-sm-2 control-label">Owner</label>
+        <label class="col-sm-2 control-label">Owner</label>
         <div class="col-sm-10">
             <input type="hidden" name="parent" value="{{ .Thing.Owner }}">
             <p class="form-control-static">
@@ -11,7 +11,7 @@
 {{ end }}
 
 <div class="form-group">
-    <label for="description" class="col-sm-2 control-label">Location</label>
+    <label class="col-sm-2 control-label">Location</label>
     <div class="col-sm-10">
         <input type="hidden" name="parent" value="{{ .Thing.Parent }}">
         <p class="form-control-static">
