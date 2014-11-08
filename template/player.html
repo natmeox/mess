@@ -17,10 +17,12 @@
                     <i class="glyphicon glyphicon-list"></i> Edit all data</a>
                 <a href="program" class="btn btn-primary">
                     <i class="glyphicon glyphicon-film"></i> Edit program</a>
+                {{ if eq .Thing.Id .Account.Character }}
                 <a href="access" class="btn btn-primary">
                     <i class="glyphicon glyphicon-tower"></i> Edit access lists</a>
                 <a href="/" class="btn btn-primary">
                     <i class="glyphicon glyphicon-lock"></i> Change password</a>
+                {{ end }}
                 <a href="/" class="btn btn-primary">
                     <i class="glyphicon glyphicon-certificate"></i> Use outfits</a>
             </div>

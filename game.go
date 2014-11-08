@@ -94,6 +94,29 @@ func (thing *Thing) GetOwner() *Thing {
 	return World.ThingForId(thing.Owner)
 }
 
+func (thing *Thing) OwnedById(playerId ThingId) bool {
+	if thing.Type == PlayerThing {
+		return thing.Id == playerId
+	}
+	return thing.Owner == playerId
+}
+
+func (thing *Thing) EditableById(playerId ThingId) bool {
+	switch {
+	case thing.Type == PlayerThing:
+		return thing.Id == playerId
+	case thing.Owner == playerId:
+		return true
+	}
+
+	for _, adminId := range thing.AdminList {
+		if adminId == playerId {
+			return true
+		}
+	}
+	return false
+}
+
 func (thing *Thing) GetContents() (contents []*Thing) {
 	for _, thingId := range thing.Contents {
 		content := World.ThingForId(thingId)

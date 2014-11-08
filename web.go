@@ -185,8 +185,12 @@ func deleteMapFrom(source map[string]interface{}, target map[string]interface{})
 
 func WebThingTable(w http.ResponseWriter, r *http.Request) {
 	thing := context.Get(r, ContextKeyThing).(*Thing)
+	account := context.Get(r, ContextKeyAccount).(*Account)
 
-	// TODO: permit only some editing once there are permissions
+	if !thing.EditableById(account.Character) {
+		http.Error(w, "No access to table data", http.StatusForbidden)
+		return
+	}
 
 	if r.Method == "POST" {
 		updateText := r.PostFormValue("updated_data")
@@ -233,6 +237,14 @@ func WebThingTable(w http.ResponseWriter, r *http.Request) {
 }
 
 func WebThingProgram(w http.ResponseWriter, r *http.Request) {
+	thing := context.Get(r, ContextKeyThing).(*Thing)
+	account := context.Get(r, ContextKeyAccount).(*Account)
+
+	if !thing.EditableById(account.Character) {
+		http.Error(w, "No access to program", http.StatusForbidden)
+		return
+	}
+
 	http.NotFound(w, r)
 }
 
@@ -241,10 +253,7 @@ func WebThingAccess(w http.ResponseWriter, r *http.Request) {
 	thing := context.Get(r, ContextKeyThing).(*Thing)
 
 	// Only the owner can edit the access lists.
-	switch {
-	case thing.Type == PlayerThing && thing.Id == account.Character:
-	case thing.Type != PlayerThing && thing.Owner == account.Character:
-	default:
+	if !thing.OwnedById(account.Character) {
 		http.Error(w, "No access to access lists", http.StatusForbidden)
 		return
 	}
@@ -296,8 +305,15 @@ func WebThingAccess(w http.ResponseWriter, r *http.Request) {
 
 func WebThingEdit(w http.ResponseWriter, r *http.Request) {
 	thing := context.Get(r, ContextKeyThing).(*Thing)
+	account := context.Get(r, ContextKeyAccount).(*Account)
 
-	// TODO: permit only some editing once there are permissions
+	if !thing.EditableById(account.Character) {
+		RenderTemplate(w, r, "thing-no-edit.html", map[string]interface{}{
+			"Title": thing.Name,
+			"Thing": thing,
+		})
+		return
+	}
 
 	if r.Method == "POST" {
 		// TODO: validate??
