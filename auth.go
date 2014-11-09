@@ -65,8 +65,9 @@ func (w *DatabaseWorld) CreateAccount(name, password string) (acc *Account) {
 		return nil
 	}
 
+	// TODO: Config setting for where to start new players?
 	origin := World.ThingForId(1)
-	char := World.CreateThing(name, origin, origin)
+	char := World.CreateThing(name, PlayerThing, nil, origin)
 	if char == nil {
 		log.Println("Couldn't create character to create an account")
 		return nil

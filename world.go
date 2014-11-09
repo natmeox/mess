@@ -52,7 +52,7 @@ func (l ThingIdList) Value() (driver.Value, error) {
 
 type WorldStore interface {
 	ThingForId(id ThingId) *Thing
-	CreateThing(name string, creator *Thing, parent *Thing) (thing *Thing)
+	CreateThing(name string, tt ThingType, creator *Thing, parent *Thing) (thing *Thing)
 	MoveThing(thing *Thing, target *Thing) (ok bool)
 	SaveThing(thing *Thing) (ok bool)
 }
@@ -122,15 +122,21 @@ func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 	return
 }
 
-func (w *DatabaseWorld) CreateThing(name string, creator *Thing, parent *Thing) (thing *Thing) {
+func (w *DatabaseWorld) CreateThing(name string, tt ThingType, creator *Thing, parent *Thing) (thing *Thing) {
 	thing = NewThing()
 	thing.Name = name
-	thing.Creator = creator.Id
-	thing.Owner = creator.Id
+	thing.Type = tt
 	thing.Parent = parent.Id
 
+	var creatorId sql.NullInt64
+	if creator != nil && thing.Type != PlayerThing {
+		creatorId.Int64 = int64(creator.Id)
+		thing.Creator = creator.Id
+		thing.Owner = creator.Id
+	}
+
 	row := w.db.QueryRow("INSERT INTO thing (name, type, creator, owner, parent) VALUES ($1, $2, $3, $4, $5) RETURNING id, created",
-		thing.Name, thing.Type.String(), thing.Creator, thing.Owner, thing.Parent)
+		thing.Name, thing.Type.String(), creator, creator, thing.Parent)
 	err := row.Scan(&thing.Id, &thing.Created)
 	if err != nil {
 		log.Println("Error creating a thing", name, ":", err.Error())
@@ -192,8 +198,8 @@ func (w *ActiveWorld) ThingForId(id ThingId) (thing *Thing) {
 	return
 }
 
-func (w *ActiveWorld) CreateThing(name string, creator *Thing, parent *Thing) (thing *Thing) {
-	thing = w.Next.CreateThing(name, creator, parent)
+func (w *ActiveWorld) CreateThing(name string, tt ThingType, creator *Thing, parent *Thing) (thing *Thing) {
+	thing = w.Next.CreateThing(name, tt, creator, parent)
 	parent.Contents = append(parent.Contents, thing.Id)
 	w.Things[thing.Id] = thing
 	return
