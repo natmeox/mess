@@ -117,6 +117,15 @@ func (thing *Thing) EditableById(playerId ThingId) bool {
 	return false
 }
 
+func (thing *Thing) DeniedById(playerId ThingId) bool {
+	for _, deniedId := range thing.DenyList {
+		if deniedId == playerId {
+			return true
+		}
+	}
+	return false
+}
+
 func (thing *Thing) GetContents() (contents []*Thing) {
 	for _, thingId := range thing.Contents {
 		content := World.ThingForId(thingId)
@@ -302,13 +311,25 @@ func GameClient(client *ClientPump, account *Account) {
 				thisThing = World.ThingForId(thisThing.Parent)
 			}
 			if action != nil {
+				// Can I use this action?
+				if action.DeniedById(char.Id) {
+					// TODO: action failure messages? once we have them? maybe?
+					client.ToClient <- fmt.Sprintf("You can't use that.")
+					break Command
+				}
+
 				target := action.ActionTarget()
 				// TODO: run a program if target.Type == ProgramThing
 				// TODO: move to target.Parent if PlayerThing or RegularThing
 				if target != nil && target.Type == PlaceThing {
-					World.MoveThing(char, target)
+					// Can we move there?
+					if target.DeniedById(char.Id) {
+					// TODO: action failure messages? once we have them? maybe?
+						client.ToClient <- fmt.Sprintf("You can't use that.")
+						break Command
+					}
 
-					// We moved so let's have a new look shall we.
+					World.MoveThing(char, target)
 					GameLook(client, char, "")
 
 					break Command
