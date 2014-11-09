@@ -1,4 +1,4 @@
-ASSETS=config.json.sample mess.sql static/ static/bootstrap/ static/bootstrap/mixins/ static/fonts/bootstrap/ static/javascripts/bootstrap/ template/
+ASSETS=config.json.sample mess.sql static/... template/...
 
 env:
 	mkdir -p env/bin env/pkg env/src/github.com/natmeox
