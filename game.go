@@ -55,6 +55,17 @@ func (tl *ThingIdList) Things() []*Thing {
 	return things
 }
 
+type ThingProgram struct {
+	Text string
+}
+
+func NewProgram(text string) (p *ThingProgram) {
+	p = &ThingProgram{
+		Text: text,
+	}
+	return
+}
+
 type Thing struct {
 	Id      ThingId
 	Type    ThingType
@@ -70,6 +81,7 @@ type Thing struct {
 
 	Contents ThingIdList
 	Table    map[string]interface{}
+	Program  *ThingProgram
 
 	Client *ClientPump
 }

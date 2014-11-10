@@ -69,15 +69,17 @@ func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 	thing = NewThing()
 	thing.Id = id
 
-	row := w.db.QueryRow("SELECT type, name, creator, created, owner, adminlist, allowlist, denylist, parent, tabledata FROM thing WHERE id = $1",
+	row := w.db.QueryRow("SELECT type, name, creator, created, owner, adminlist, allowlist, denylist, parent, tabledata, program FROM thing WHERE id = $1",
 		id)
 	var typetext string
 	var creator sql.NullInt64
 	var owner sql.NullInt64
 	var parent sql.NullInt64
 	var tabledata types.JsonText
+	var program sql.NullString
 	err := row.Scan(&typetext, &thing.Name, &creator, &thing.Created, &owner,
-		&thing.AdminList, &thing.AllowList, &thing.DenyList, &parent, &tabledata)
+		&thing.AdminList, &thing.AllowList, &thing.DenyList, &parent, &tabledata,
+		&program)
 	if err != nil {
 		log.Println("Error finding thing", id, ":", err.Error())
 		return nil
@@ -91,6 +93,9 @@ func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 	}
 	if parent.Valid {
 		thing.Parent = ThingId(parent.Int64)
+	}
+	if program.Valid {
+		thing.Program = NewProgram(program.String)
 	}
 	err = tabledata.Unmarshal(&thing.Table)
 	if err != nil {
@@ -162,10 +167,14 @@ func (w *DatabaseWorld) SaveThing(thing *Thing) (ok bool) {
 		log.Println("Error serializing table data for thing", thing.Id, ":", err.Error())
 		return false
 	}
-	// TODO: save the access list
-	_, err = w.db.Exec("UPDATE thing SET name = $1, parent = $2, owner = $3, adminlist = $4, denylist = $5, tabledata = $6 WHERE id = $7",
+	var program sql.NullString
+	if thing.Program != nil {
+		program.String = thing.Program.Text
+	}
+	// TODO: save the allow list
+	_, err = w.db.Exec("UPDATE thing SET name = $1, parent = $2, owner = $3, adminlist = $4, denylist = $5, tabledata = $6, program = $7 WHERE id = $8",
 		thing.Name, thing.Parent, thing.Owner, thing.AdminList, thing.DenyList,
-		types.JsonText(tabletext), thing.Id)
+		types.JsonText(tabletext), program, thing.Id)
 	if err != nil {
 		log.Println("Error saving a thing", thing.Id, ":", err.Error())
 		return false

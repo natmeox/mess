@@ -11,7 +11,8 @@ CREATE TABLE thing (
     allowlist INTEGER[] NOT NULL DEFAULT ARRAY[]::integer[],
     denylist INTEGER[] NOT NULL DEFAULT ARRAY[]::integer[],
     parent INTEGER REFERENCES thing,
-    tabledata JSON NOT NULL DEFAULT '{}'::json
+    tabledata JSON NOT NULL DEFAULT '{}'::json,
+    program TEXT
 );
 
 CREATE TABLE account (

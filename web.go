@@ -245,7 +245,18 @@ func WebThingProgram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.NotFound(w, r)
+	if r.Method == "POST" {
+		// TODO: try compiling the text first?
+		program := r.PostFormValue("text")
+
+		thing.Program = NewProgram(program)
+		World.SaveThing(thing)
+	}
+
+	RenderTemplate(w, r, "program.html", map[string]interface{}{
+		"Title": fmt.Sprintf("Edit program – %s", thing.Name),
+		"Thing": thing,
+	})
 }
 
 func WebThingAccess(w http.ResponseWriter, r *http.Request) {
