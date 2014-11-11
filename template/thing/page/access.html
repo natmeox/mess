@@ -16,7 +16,7 @@
             <div class="col-sm-10">
                 {{ if eq .Thing.Id .Account.Character }}
                     <p class="form-control-static">
-                        {{ template "thinglink.html" .Thing.GetOwner }}
+                        {{ template "thing/thinglink.html" .Thing.GetOwner }}
                     </p>
                     <p class="help-block">
                         Players own themselves, so you can’t change who owns you.
@@ -24,7 +24,7 @@
                 {{ else }}
                     <input type="hidden" name="parent" value="">
                     <p class="form-control-static">
-                        {{ template "thinglink.html" .Thing.GetOwner }}
+                        {{ template "thing/thinglink.html" .Thing.GetOwner }}
                     </p>
                     <p class="help-block">
                         This is you. Drop someone else here to give this thing to someone else — but only the owner can edit these access lists.
@@ -40,7 +40,7 @@
                 <p class="form-control-static">
                     <span class="contents">
                         {{ range .Thing.AdminList.Things }}
-                            {{ template "thinglink.html" . }}
+                            {{ template "thing/thinglink.html" . }}
                         {{ end }}
                     </span>
                     <span class="thinglink thinglink-target">
@@ -65,7 +65,7 @@
                 <p class="form-control-static">
                     <span class="contents">
                         {{ range .Thing.DenyList.Things }}
-                            {{ template "thinglink.html" . }}
+                            {{ template "thing/thinglink.html" . }}
                         {{ end }}
                     </span>
                     <span class="thinglink thinglink-target">

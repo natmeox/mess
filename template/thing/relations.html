@@ -4,7 +4,7 @@
         <div class="col-sm-10">
             <input type="hidden" name="parent" value="{{ .Thing.Owner }}">
             <p class="form-control-static">
-                {{ template "thinglink.html" .Thing.GetOwner }}
+                {{ template "thing/thinglink.html" .Thing.GetOwner }}
             </p>
         </div>
     </div>
@@ -15,7 +15,7 @@
     <div class="col-sm-10">
         <input type="hidden" name="parent" value="{{ .Thing.Parent }}">
         <p class="form-control-static">
-            {{ template "thinglink.html" .Thing.GetParent }}
+            {{ template "thing/thinglink.html" .Thing.GetParent }}
         </p>
     </div>
 </div>
@@ -27,7 +27,7 @@
             <span class="contents">
                 {{ range .Thing.GetContents }}
                     <input type="hidden" name="content" value="{{ .Id }}">
-                    {{ template "thinglink.html" . }}
+                    {{ template "thing/thinglink.html" . }}
                 {{ end }}
             </span>
             <span class="thinglink thinglink-target">
@@ -60,7 +60,7 @@
                 <tr>
                     <td>{{ .Name }}</td>
                     <td>
-                        {{ template "thinglink.html" .ActionTarget }}
+                        {{ template "thing/thinglink.html" .ActionTarget }}
                     </td>
                 </tr>
             {{ end }}

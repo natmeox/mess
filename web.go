@@ -10,6 +10,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -221,7 +223,7 @@ func WebThingTable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RenderTemplate(w, r, "table.html", map[string]interface{}{
+	RenderTemplate(w, r, "thing/page/table.html", map[string]interface{}{
 		"Title": fmt.Sprintf("Edit all data – %s", thing.Name),
 		"Thing": thing,
 		"json": func(v interface{}) interface{} {
@@ -253,7 +255,7 @@ func WebThingProgram(w http.ResponseWriter, r *http.Request) {
 		World.SaveThing(thing)
 	}
 
-	RenderTemplate(w, r, "program.html", map[string]interface{}{
+	RenderTemplate(w, r, "thing/page/program.html", map[string]interface{}{
 		"Title": fmt.Sprintf("Edit program – %s", thing.Name),
 		"Thing": thing,
 	})
@@ -308,7 +310,7 @@ func WebThingAccess(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RenderTemplate(w, r, "access.html", map[string]interface{}{
+	RenderTemplate(w, r, "thing/page/access.html", map[string]interface{}{
 		"Title": thing.Name,
 		"Thing": thing,
 	})
@@ -319,7 +321,7 @@ func WebThingEdit(w http.ResponseWriter, r *http.Request) {
 	account := context.Get(r, ContextKeyAccount).(*Account)
 
 	if !thing.EditableById(account.Character) {
-		RenderTemplate(w, r, "thing-no-edit.html", map[string]interface{}{
+		RenderTemplate(w, r, "thing/thing-no-edit.html", map[string]interface{}{
 			"Title": thing.Name,
 			"Thing": thing,
 		})
@@ -356,7 +358,7 @@ func WebThingEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	typeName := thing.Type.String()
-	templateName := fmt.Sprintf("%s.html", typeName)
+	templateName := fmt.Sprintf("thing/type/%s.html", typeName)
 	RenderTemplate(w, r, templateName, map[string]interface{}{
 		"Title": fmt.Sprintf("Edit access lists - %s", thing.Name),
 		"Thing": thing,
@@ -409,7 +411,25 @@ func StartWeb() {
 
 	var templates *template.Template
 	ParseTemplates := func() *template.Template {
-		tmpls, err := template.ParseGlob("./template/*.html")
+		tmpls := template.New("")
+		err := filepath.Walk("./template", func (path string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() || !strings.HasSuffix(path, ".html") {
+				return err
+			}
+
+			relativePath, err := filepath.Rel("./template", path)
+			if err != nil {
+				return err
+			}
+
+			subtmpl, err := template.ParseFiles(path)
+			if err != nil {
+				return err
+			}
+
+			_, err = tmpls.AddParseTree(relativePath, subtmpl.Tree)
+			return err
+		})
 		if err != nil {
 			log.Fatalln("Couldn't load HTML templates:", err.Error())
 		}
