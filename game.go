@@ -3,6 +3,7 @@ package mess
 import (
 	"fmt"
 	"github.com/aarzilli/golua/lua"
+	"github.com/stevedonovan/luar"
 	"log"
 	"strings"
 	"time"
@@ -85,6 +86,20 @@ func (p *ThingProgram) compile() error {
 	} else {
 		p.state = state
 	}
+	return err
+}
+
+func (p *ThingProgram) TryToCall(name string, args ...interface{}) error {
+	if p.Error != nil {
+		return nil
+	}
+
+	fn := luar.NewLuaObjectFromName(p.state, name)
+	if fn == nil {
+		return nil
+	}
+
+	_, err := fn.Call(args...)
 	return err
 }
 
@@ -275,6 +290,12 @@ func GameLook(client *ClientPump, char *Thing, rest string) {
 		} else {
 			client.ToClient <- "You see nothing special."
 		}
+
+		if target.Program != nil {
+			// TODO: Uh... what can the script do with char?
+			target.Program.TryToCall("Looked", char)
+		}
+
 		return
 	}
 
