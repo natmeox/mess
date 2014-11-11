@@ -1,0 +1,40 @@
+{{ template "head.html" . }}
+
+    {{ template "navbar.html" . }}
+
+    <form method="post" class="form form-horizontal" role="form">
+        <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+
+        <div class="form-group">
+            <div class="col-sm-12">
+                <h3>Editing program for “<a href="{{ .Thing.GetURL }}">{{ .Thing.Name }}</a>”</h3>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-12">
+                <textarea id="text" name="text" class="form-control" rows="10">{{ if .Thing.Program }}{{ .Thing.Program.Text }}{{ end }}</textarea>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-12">
+                <button class="btn btn-primary">Save</button>
+                <a href="/" class="btn btn-cancel">Cancel</a>
+            </div>
+        </div>
+
+    </form>
+
+    <script>
+        var editor;
+        $(function () {
+            var editorarea = $('#text').get(0);
+            editor = CodeMirror.fromTextArea(editorarea, {
+                'mode': 'lua',
+                'lineNumbers': true
+            });
+        });
+    </script>
+
+{{ template "foot.html" . }}

@@ -167,13 +167,26 @@ func (w *DatabaseWorld) SaveThing(thing *Thing) (ok bool) {
 		log.Println("Error serializing table data for thing", thing.Id, ":", err.Error())
 		return false
 	}
+
+	var parent sql.NullInt64
+	if thing.Parent != 0 {
+		parent.Int64 = int64(thing.Parent)
+		parent.Valid = true
+	}
+	var owner sql.NullInt64
+	if thing.Owner != 0 {
+		owner.Int64 = int64(thing.Owner)
+		owner.Valid = true
+	}
 	var program sql.NullString
 	if thing.Program != nil {
 		program.String = thing.Program.Text
+		program.Valid = true
 	}
+
 	// TODO: save the allow list
 	_, err = w.db.Exec("UPDATE thing SET name = $1, parent = $2, owner = $3, adminlist = $4, denylist = $5, tabledata = $6, program = $7 WHERE id = $8",
-		thing.Name, thing.Parent, thing.Owner, thing.AdminList, thing.DenyList,
+		thing.Name, parent, owner, thing.AdminList, thing.DenyList,
 		types.JsonText(tabletext), program, thing.Id)
 	if err != nil {
 		log.Println("Error saving a thing", thing.Id, ":", err.Error())

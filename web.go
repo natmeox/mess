@@ -253,11 +253,15 @@ func WebThingProgram(w http.ResponseWriter, r *http.Request) {
 
 		thing.Program = NewProgram(program)
 		World.SaveThing(thing)
+
+		http.Redirect(w, r, fmt.Sprintf("%sprogram", thing.GetURL()), http.StatusSeeOther)
+		return
 	}
 
 	RenderTemplate(w, r, "thing/page/program.html", map[string]interface{}{
 		"Title": fmt.Sprintf("Edit program – %s", thing.Name),
 		"Thing": thing,
+		"IncludeCodeMirror": true,
 	})
 }
 
