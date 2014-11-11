@@ -247,21 +247,25 @@ func WebThingProgram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var newProgram *ThingProgram
 	if r.Method == "POST" {
-		// TODO: try compiling the text first?
 		program := r.PostFormValue("text")
 
-		thing.Program = NewProgram(program)
-		World.SaveThing(thing)
+		newProgram = NewProgram(program)
+		if newProgram.Error == nil {
+			thing.Program = newProgram
+			World.SaveThing(thing)
 
-		http.Redirect(w, r, fmt.Sprintf("%sprogram", thing.GetURL()), http.StatusSeeOther)
-		return
+			http.Redirect(w, r, fmt.Sprintf("%sprogram", thing.GetURL()), http.StatusSeeOther)
+			return
+		}
 	}
 
 	RenderTemplate(w, r, "thing/page/program.html", map[string]interface{}{
+		"IncludeCodeMirror": true,
 		"Title": fmt.Sprintf("Edit program – %s", thing.Name),
 		"Thing": thing,
-		"IncludeCodeMirror": true,
+		"Program": newProgram,
 	})
 }
 

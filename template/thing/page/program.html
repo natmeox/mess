@@ -11,9 +11,15 @@
             </div>
         </div>
 
+        {{ if .Program }}
+            <div class="alert alert-danger" role="alert">
+                <strong>Error:</strong> {{ .Program.Error }}
+            </div>
+        {{ end }}
+
         <div class="form-group">
             <div class="col-sm-12">
-                <textarea id="text" name="text" class="form-control" rows="10">{{ if .Thing.Program }}{{ .Thing.Program.Text }}{{ end }}</textarea>
+                <textarea id="text" name="text" class="form-control" rows="10">{{ if .Program }}{{ .Program.Text }}{{ else if .Thing.Program }}{{ .Thing.Program.Text }}{{ end }}</textarea>
             </div>
         </div>
 

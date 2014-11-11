@@ -2,6 +2,7 @@ package mess
 
 import (
 	"fmt"
+	"github.com/aarzilli/golua/lua"
 	"log"
 	"strings"
 	"time"
@@ -56,14 +57,35 @@ func (tl *ThingIdList) Things() []*Thing {
 }
 
 type ThingProgram struct {
-	Text string
+	Text  string
+	Error error
+	state *lua.State
 }
 
 func NewProgram(text string) (p *ThingProgram) {
 	p = &ThingProgram{
 		Text: text,
 	}
-	return
+	p.compile()
+	return p
+}
+
+func (p *ThingProgram) compile() error {
+	state := lua.NewState()
+	state.OpenBase()
+	state.OpenPackage()
+	state.OpenString()
+	state.OpenTable()
+	state.OpenMath()
+	// Not IO & not OS.
+
+	err := state.DoString(p.Text)
+	if err != nil {
+		p.Error = err
+	} else {
+		p.state = state
+	}
+	return err
 }
 
 type Thing struct {
