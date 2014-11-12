@@ -396,21 +396,40 @@ func GameClient(client *ClientPump, account *Account) {
 				}
 
 				target := action.ActionTarget()
-				// TODO: run a program if target.Type == ProgramThing
-				// TODO: move to target.Parent if PlayerThing or RegularThing
-				if target != nil && target.Type == PlaceThing {
-					// Can we move there?
-					if target.DeniedById(char.Id) {
-					// TODO: action failure messages? once we have them? maybe?
-						client.ToClient <- fmt.Sprintf("You can't use that.")
-						break Command
-					}
-
-					World.MoveThing(char, target)
-					GameLook(client, char, "")
-
+				if target == nil {
+					client.ToClient <- fmt.Sprintf("Nothing happens.")
 					break Command
 				}
+
+				// Can we use that target?
+				if target.DeniedById(char.Id) {
+					// TODO: action failure messages? once we have them? maybe?
+					client.ToClient <- fmt.Sprintf("You can't use that.")
+					break Command
+				}
+
+				// TODO: run a program if target.Type == ProgramThing
+				// TODO: move to target.Parent if PlayerThing or RegularThing
+				switch target.Type {
+				case PlaceThing:
+					World.MoveThing(char, target)
+					GameLook(client, char, "")
+				case ProgramThing:
+					if target.Program == nil {
+						client.ToClient <- fmt.Sprintf("Nothing happens.")
+						break Command
+					}
+					target.Program.TryToCall("Run", map[string]interface{}{
+						"me":      char,
+						"here":    World.ThingForId(char.Parent),
+						"this":    action,   // the "trigger"
+						"command": parts[0], // un-lowered
+					}, rest)
+				default: // player, action, regular thing
+					client.ToClient <- fmt.Sprintf("Nothing happens.")
+					break Command
+				}
+				break Command
 			}
 
 			// Didn't find such an action.
