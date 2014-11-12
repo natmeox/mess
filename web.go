@@ -263,9 +263,9 @@ func WebThingProgram(w http.ResponseWriter, r *http.Request) {
 
 	RenderTemplate(w, r, "thing/page/program.html", map[string]interface{}{
 		"IncludeCodeMirror": true,
-		"Title": fmt.Sprintf("Edit program – %s", thing.Name),
-		"Thing": thing,
-		"Program": newProgram,
+		"Title":             fmt.Sprintf("Edit program – %s", thing.Name),
+		"Thing":             thing,
+		"Program":           newProgram,
 	})
 }
 
@@ -420,7 +420,7 @@ func StartWeb() {
 	var templates *template.Template
 	ParseTemplates := func() *template.Template {
 		tmpls := template.New("")
-		err := filepath.Walk("./template", func (path string, info os.FileInfo, err error) error {
+		err := filepath.Walk("./template", func(path string, info os.FileInfo, err error) error {
 			if err != nil || info.IsDir() || !strings.HasSuffix(path, ".html") {
 				return err
 			}
