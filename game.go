@@ -72,7 +72,7 @@ func NewProgram(text string) (p *ThingProgram) {
 }
 
 func (p *ThingProgram) compile() error {
-	state := lua.NewState()
+	state := luar.Init()
 	state.OpenBase()
 	state.OpenPackage()
 	state.OpenString()
@@ -89,7 +89,7 @@ func (p *ThingProgram) compile() error {
 	return err
 }
 
-func (p *ThingProgram) TryToCall(name string, args ...interface{}) error {
+func (p *ThingProgram) TryToCall(name string, env map[string]interface{}, args ...interface{}) error {
 	if p.Error != nil {
 		return nil
 	}
@@ -98,6 +98,13 @@ func (p *ThingProgram) TryToCall(name string, args ...interface{}) error {
 	if fn == nil {
 		return nil
 	}
+
+	// as in #define lua_pushglobaltable
+	// lua.LUA_RIDX_GLOBALS == 2
+	p.state.RawGeti(lua.LUA_REGISTRYINDEX, 2)
+	// Put our local global variables in it.
+	luar.Register(p.state, "*", luar.Map(env))
+	p.state.Pop(-1)
 
 	_, err := fn.Call(args...)
 	return err
@@ -293,7 +300,22 @@ func GameLook(client *ClientPump, char *Thing, rest string) {
 
 		if target.Program != nil {
 			// TODO: Uh... what can the script do with char?
-			target.Program.TryToCall("Looked", char)
+			err := target.Program.TryToCall("Looked", map[string]interface{}{
+				"me":   char,
+				"here": World.ThingForId(char.Parent),
+				"this": target,
+			}, char)
+			if err != nil {
+				owner := target
+				if target.Type != PlayerThing {
+					owner = World.ThingForId(target.Owner)
+				}
+
+				ownClient := owner.Client
+				if ownClient != nil {
+					ownClient.ToClient <- fmt.Sprintf("Error with your program: %s", err.Error())
+				}
+			}
 		}
 
 		return
