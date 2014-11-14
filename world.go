@@ -23,7 +23,6 @@ func (l *ThingIdList) Scan(src interface{}) error {
 	}
 
 	matches := thingIdListExp.FindAllStringSubmatch(string(asBytes), -1)
-	log.Println("Found submatches", matches, "(len", len(matches), ") while scanning id list")
 	results := make([]ThingId, len(matches))
 	for i, match := range matches {
 		value64, err := strconv.ParseInt(match[0], 0, 64)
