@@ -2,6 +2,33 @@
 
     {{ template "navbar.html" . }}
 
-    <p>Hi hello.</p>
+    <h3>{{ .Player.Name }}</h3>
+    <p>{{ .Player.Table.glance }}</p>
+
+    <div class="button-list">
+        <form method="post" action="/create-thing" role="form">
+            <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+            <input type="hidden" name="type" value="thing">
+            <button class="btn btn-thing"><i class="glyphicon"></i> Create thing</button>
+        </form>
+        <form method="post" action="/create-thing" role="form">
+            <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+            <input type="hidden" name="type" value="place">
+            <button class="btn btn-place"><i class="glyphi"></i> Create place</button>
+        </form>
+        <form method="post" action="/create-thing" role="form">
+            <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+            <input type="hidden" name="type" value="program">
+            <button class="btn btn-program"><i></i> Create program</button>
+        </form>
+    </div>
+
+    <h4>Your Contents</h4>
+
+    <h4>Near You</h4>
+
+    <h4>Your Places</h4>
+
+    <h4>Your Programs</h4>
 
 {{ template "foot.html" . }}

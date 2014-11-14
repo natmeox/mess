@@ -22,7 +22,10 @@ h3 {
 	margin: 0;
 }
 
-.form-button-bar {
+.button-list {
+    form {
+        display: inline-block;
+    }
     button.btn, a.btn {
         margin-right: 1rem;
     }
@@ -37,6 +40,27 @@ $program-bg: #39CCCC;
 .contents .thinglink, #thingPalette .thinglink {
     margin-right: 1rem;
     margin-bottom: 1rem;
+}
+
+.btn-thing {
+    @include button-variant(#fff, $thing-bg, darken($thing-bg, 5%));
+    i { @extend .glyphicon; @extend .glyphicon-star; }
+}
+.btn-action {
+    @include button-variant(#fff, $action-bg, darken($action-bg, 5%));
+    i { @extend .glyphicon; @extend .glyphicon-flash; }
+}
+.btn-program {
+    @include button-variant(#fff, $program-bg, darken($program-bg, 5%));
+    i { @extend .glyphicon; @extend .glyphicon-film; }
+}
+.btn-place {
+    @include button-variant(#fff, $place-bg, darken($place-bg, 5%));
+    i { @extend .glyphicon; @extend .glyphicon-map-marker; }
+}
+.btn-player {
+    @include button-variant(#fff, $player-bg, darken($player-bg, 5%));
+    i { @extend .glyphicon; @extend .glyphicon-heart; }
 }
 
 .thinglink {

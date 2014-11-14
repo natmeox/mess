@@ -183,7 +183,7 @@ th {
   font-family: 'Glyphicons Halflings';
   src: url("bootstrap/fonts/glyphicons-halflings-regular.eot");
   src: url("bootstrap/fonts/glyphicons-halflings-regular.eot?#iefix") format("embedded-opentype"), url("bootstrap/fonts/glyphicons-halflings-regular.woff") format("woff"), url("bootstrap/fonts/glyphicons-halflings-regular.ttf") format("truetype"), url("bootstrap/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular") format("svg"); }
-.glyphicon, .thinglink i {
+.glyphicon, .btn-thing i, .btn-action i, .btn-program i, .btn-place i, .btn-player i, .thinglink i {
   position: relative;
   top: 1px;
   display: inline-block;
@@ -225,10 +225,10 @@ th {
 .glyphicon-search:before {
   content: "\e003"; }
 
-.glyphicon-heart:before, .thinglink.thinglink-player i:before {
+.glyphicon-heart:before, .btn-player i:before, .thinglink.thinglink-player i:before {
   content: "\e005"; }
 
-.glyphicon-star:before, .thinglink.thinglink-thing i:before {
+.glyphicon-star:before, .btn-thing i:before, .thinglink.thinglink-thing i:before {
   content: "\e006"; }
 
 .glyphicon-star-empty:before {
@@ -237,7 +237,7 @@ th {
 .glyphicon-user:before {
   content: "\e008"; }
 
-.glyphicon-film:before, .thinglink.thinglink-program i:before {
+.glyphicon-film:before, .btn-program i:before, .thinglink.thinglink-program i:before {
   content: "\e009"; }
 
 .glyphicon-th-large:before {
@@ -393,7 +393,7 @@ th {
 .glyphicon-picture:before {
   content: "\e060"; }
 
-.glyphicon-map-marker:before, .thinglink.thinglink-place i:before {
+.glyphicon-map-marker:before, .btn-place i:before, .thinglink.thinglink-place i:before {
   content: "\e062"; }
 
 .glyphicon-adjust:before {
@@ -681,7 +681,7 @@ th {
 .glyphicon-log-in:before {
   content: "\e161"; }
 
-.glyphicon-flash:before, .thinglink.thinglink-action i:before {
+.glyphicon-flash:before, .btn-action i:before, .thinglink.thinglink-action i:before {
   content: "\e162"; }
 
 .glyphicon-log-out:before {
@@ -4093,12 +4093,99 @@ body {
 h3 {
   margin: 0; }
 
-.form-button-bar button.btn, .form-button-bar a.btn {
+.button-list form {
+  display: inline-block; }
+.button-list button.btn, .button-list a.btn {
   margin-right: 1rem; }
 
 .contents .thinglink, #thingPalette .thinglink {
   margin-right: 1rem;
   margin-bottom: 1rem; }
+
+.btn-thing {
+  color: white;
+  background-color: #0074d9;
+  border-color: #0066c0; }
+  .btn-thing:hover, .btn-thing:focus, .btn-thing.focus, .btn-thing:active, .btn-thing.active, .open > .btn-thing.dropdown-toggle {
+    color: white;
+    background-color: #0059a6;
+    border-color: #004682; }
+  .btn-thing:active, .btn-thing.active, .open > .btn-thing.dropdown-toggle {
+    background-image: none; }
+  .btn-thing.disabled, .btn-thing.disabled:hover, .btn-thing.disabled:focus, .btn-thing.disabled.focus, .btn-thing.disabled:active, .btn-thing.disabled.active, .btn-thing[disabled], .btn-thing[disabled]:hover, .btn-thing[disabled]:focus, .btn-thing[disabled].focus, .btn-thing[disabled]:active, .btn-thing[disabled].active, fieldset[disabled] .btn-thing, fieldset[disabled] .btn-thing:hover, fieldset[disabled] .btn-thing:focus, fieldset[disabled] .btn-thing.focus, fieldset[disabled] .btn-thing:active, fieldset[disabled] .btn-thing.active {
+    background-color: #0074d9;
+    border-color: #0066c0; }
+  .btn-thing .badge {
+    color: #0074d9;
+    background-color: white; }
+
+.btn-action {
+  color: white;
+  background-color: #ffdc00;
+  border-color: #e6c600; }
+  .btn-action:hover, .btn-action:focus, .btn-action.focus, .btn-action:active, .btn-action.active, .open > .btn-action.dropdown-toggle {
+    color: white;
+    background-color: #ccb000;
+    border-color: #a89100; }
+  .btn-action:active, .btn-action.active, .open > .btn-action.dropdown-toggle {
+    background-image: none; }
+  .btn-action.disabled, .btn-action.disabled:hover, .btn-action.disabled:focus, .btn-action.disabled.focus, .btn-action.disabled:active, .btn-action.disabled.active, .btn-action[disabled], .btn-action[disabled]:hover, .btn-action[disabled]:focus, .btn-action[disabled].focus, .btn-action[disabled]:active, .btn-action[disabled].active, fieldset[disabled] .btn-action, fieldset[disabled] .btn-action:hover, fieldset[disabled] .btn-action:focus, fieldset[disabled] .btn-action.focus, fieldset[disabled] .btn-action:active, fieldset[disabled] .btn-action.active {
+    background-color: #ffdc00;
+    border-color: #e6c600; }
+  .btn-action .badge {
+    color: #ffdc00;
+    background-color: white; }
+
+.btn-program {
+  color: white;
+  background-color: #39cccc;
+  border-color: #30bbbb; }
+  .btn-program:hover, .btn-program:focus, .btn-program.focus, .btn-program:active, .btn-program.active, .open > .btn-program.dropdown-toggle {
+    color: white;
+    background-color: #2ba7a7;
+    border-color: #248b8b; }
+  .btn-program:active, .btn-program.active, .open > .btn-program.dropdown-toggle {
+    background-image: none; }
+  .btn-program.disabled, .btn-program.disabled:hover, .btn-program.disabled:focus, .btn-program.disabled.focus, .btn-program.disabled:active, .btn-program.disabled.active, .btn-program[disabled], .btn-program[disabled]:hover, .btn-program[disabled]:focus, .btn-program[disabled].focus, .btn-program[disabled]:active, .btn-program[disabled].active, fieldset[disabled] .btn-program, fieldset[disabled] .btn-program:hover, fieldset[disabled] .btn-program:focus, fieldset[disabled] .btn-program.focus, fieldset[disabled] .btn-program:active, fieldset[disabled] .btn-program.active {
+    background-color: #39cccc;
+    border-color: #30bbbb; }
+  .btn-program .badge {
+    color: #39cccc;
+    background-color: white; }
+
+.btn-place {
+  color: white;
+  background-color: #3d9970;
+  border-color: #368763; }
+  .btn-place:hover, .btn-place:focus, .btn-place.focus, .btn-place:active, .btn-place.active, .open > .btn-place.dropdown-toggle {
+    color: white;
+    background-color: #2e7555;
+    border-color: #245b43; }
+  .btn-place:active, .btn-place.active, .open > .btn-place.dropdown-toggle {
+    background-image: none; }
+  .btn-place.disabled, .btn-place.disabled:hover, .btn-place.disabled:focus, .btn-place.disabled.focus, .btn-place.disabled:active, .btn-place.disabled.active, .btn-place[disabled], .btn-place[disabled]:hover, .btn-place[disabled]:focus, .btn-place[disabled].focus, .btn-place[disabled]:active, .btn-place[disabled].active, fieldset[disabled] .btn-place, fieldset[disabled] .btn-place:hover, fieldset[disabled] .btn-place:focus, fieldset[disabled] .btn-place.focus, fieldset[disabled] .btn-place:active, fieldset[disabled] .btn-place.active {
+    background-color: #3d9970;
+    border-color: #368763; }
+  .btn-place .badge {
+    color: #3d9970;
+    background-color: white; }
+
+.btn-player {
+  color: white;
+  background-color: #85144b;
+  border-color: #6f113f; }
+  .btn-player:hover, .btn-player:focus, .btn-player.focus, .btn-player:active, .btn-player.active, .open > .btn-player.dropdown-toggle {
+    color: white;
+    background-color: #590d32;
+    border-color: #3a0921; }
+  .btn-player:active, .btn-player.active, .open > .btn-player.dropdown-toggle {
+    background-image: none; }
+  .btn-player.disabled, .btn-player.disabled:hover, .btn-player.disabled:focus, .btn-player.disabled.focus, .btn-player.disabled:active, .btn-player.disabled.active, .btn-player[disabled], .btn-player[disabled]:hover, .btn-player[disabled]:focus, .btn-player[disabled].focus, .btn-player[disabled]:active, .btn-player[disabled].active, fieldset[disabled] .btn-player, fieldset[disabled] .btn-player:hover, fieldset[disabled] .btn-player:focus, fieldset[disabled] .btn-player.focus, fieldset[disabled] .btn-player:active, fieldset[disabled] .btn-player.active {
+    background-color: #85144b;
+    border-color: #6f113f; }
+  .btn-player .badge {
+    color: #85144b;
+    background-color: white; }
 
 .thinglink {
   display: inline-block;

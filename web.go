@@ -405,9 +405,42 @@ func WebThing(w http.ResponseWriter, r *http.Request) {
 	webThingMux.ServeHTTP(w, r)
 }
 
+func WebCreateThing(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		w.Header().Set("Allow", "POST")
+		http.Error(w, "POST only", http.StatusBadRequest)
+		return
+	}
+
+	thingTypeStr := r.PostFormValue("type")
+	thingType := ThingTypeForName(thingTypeStr)
+	switch thingType {
+	case PlayerThing:
+		fallthrough
+	case ActionThing:
+		http.Error(w, fmt.Sprintf("Cannot create %s things this way", thingType), http.StatusBadRequest)
+		return
+	}
+
+	account := context.Get(r, ContextKeyAccount).(*Account)
+	accPlayer := World.ThingForId(account.Character)
+
+	parent := accPlayer
+	if thingType == PlaceThing {
+		parent = World.ThingForId(1)
+	}
+
+	name := fmt.Sprintf("New %s", strings.Title(thingType.String()))
+	thing := World.CreateThing(name, thingType, accPlayer, parent)
+
+	http.Redirect(w, r, thing.GetURL(), http.StatusSeeOther)
+}
+
 func WebIndex(w http.ResponseWriter, r *http.Request) {
+	account := context.Get(r, ContextKeyAccount).(*Account)
 	RenderTemplate(w, r, "index.html", map[string]interface{}{
 		"Title": "Home",
+		"Player": World.ThingForId(account.Character),
 	})
 }
 
@@ -476,6 +509,8 @@ func StartWeb() {
 	webThingMux.HandleFunc("/table", WebThingTable)
 	webThingMux.HandleFunc("/program", WebThingProgram)
 	webThingMux.HandleFunc("/access", WebThingAccess)
+
+	http.Handle("/create-thing", RequireAccountFunc(WebCreateThing))
 
 	indexHandler := RequireAccountFunc(WebIndex)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

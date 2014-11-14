@@ -141,7 +141,7 @@ func (w *DatabaseWorld) CreateThing(name string, tt ThingType, creator *Thing, p
 	}
 
 	row := w.db.QueryRow("INSERT INTO thing (name, type, creator, owner, parent) VALUES ($1, $2, $3, $4, $5) RETURNING id, created",
-		thing.Name, thing.Type.String(), creator, creator, thing.Parent)
+		thing.Name, thing.Type.String(), creatorId, creatorId, thing.Parent)
 	err := row.Scan(&thing.Id, &thing.Created)
 	if err != nil {
 		log.Println("Error creating a thing", name, ":", err.Error())
@@ -222,6 +222,11 @@ func (w *ActiveWorld) ThingForId(id ThingId) (thing *Thing) {
 
 func (w *ActiveWorld) CreateThing(name string, tt ThingType, creator *Thing, parent *Thing) (thing *Thing) {
 	thing = w.Next.CreateThing(name, tt, creator, parent)
+	if thing == nil {
+		return
+	}
+
+	log.Println("Created a thing", thing, ", adding to parent's in-memory contents")
 	parent.Contents = append(parent.Contents, thing.Id)
 	w.Things[thing.Id] = thing
 	return
