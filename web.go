@@ -337,6 +337,10 @@ func WebThingEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
+		// TODO: player names should be unique?
+		// TODO: account loginnames should match their player names?
+		thing.Name = r.PostFormValue("name")
+
 		// TODO: validate??
 		thing.Table["description"] = r.PostFormValue("description")
 		if thing.Type == PlayerThing {
