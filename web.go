@@ -443,7 +443,7 @@ func WebCreateThing(w http.ResponseWriter, r *http.Request) {
 func WebIndex(w http.ResponseWriter, r *http.Request) {
 	account := context.Get(r, ContextKeyAccount).(*Account)
 	RenderTemplate(w, r, "index.html", map[string]interface{}{
-		"Title": "Home",
+		"Title":  "Home",
 		"Player": World.ThingForId(account.Character),
 	})
 }
