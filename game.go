@@ -181,12 +181,38 @@ func (thing *Thing) ActionMatches(command string) bool {
 func (thing *Thing) ActionTarget() (target *Thing) {
 	if targetId, ok := thing.Table["target"]; ok {
 		// JSON numbers are float64s. :|
+		// TODO: shouldn't these be links? how can we have thing references in our json data
 		if targetIdNum, ok := targetId.(float64); ok {
 			targetIdInt := ThingId(targetIdNum)
 			target = World.ThingForId(targetIdInt)
 		}
 	}
 	return
+}
+
+func (thing *Thing) TryToCall(name string, env map[string]interface{}, args ...interface{}) {
+	prog := thing.Program
+	if prog == nil {
+		// No program to run, a-OK.
+		return
+	}
+
+	err := prog.TryToCall(name, env, args...)
+	if err == nil {
+		// Success!
+		return
+	}
+
+	// Notify the thing's owner of the error.
+	owner := thing
+	if thing.Type != PlayerThing {
+		owner = World.ThingForId(thing.Owner)
+	}
+	ownClient := owner.Client
+	if ownClient != nil {
+		ownClient.ToClient <- fmt.Sprintf("Error with your program '%s': %s",
+			thing.Name, err.Error())
+	}
 }
 
 var World WorldStore
@@ -234,39 +260,24 @@ func GameLook(client *ClientPump, char *Thing, rest string) {
 	}
 	target := Identify(char, rest)
 
-	if target != nil {
-		client.ToClient <- target.Name
-		desc, ok := target.Table["description"].(string)
-		if ok && desc != "" {
-			client.ToClient <- desc
-		} else {
-			client.ToClient <- "You see nothing special."
-		}
-
-		if target.Program != nil {
-			// TODO: Uh... what can the script do with char?
-			err := target.Program.TryToCall("Looked", map[string]interface{}{
-				"me":   char,
-				"here": World.ThingForId(char.Parent),
-				"this": target,
-			}, char)
-			if err != nil {
-				owner := target
-				if target.Type != PlayerThing {
-					owner = World.ThingForId(target.Owner)
-				}
-
-				ownClient := owner.Client
-				if ownClient != nil {
-					ownClient.ToClient <- fmt.Sprintf("Error with your program: %s", err.Error())
-				}
-			}
-		}
-
+	if target == nil {
+		client.ToClient <- fmt.Sprintf("Not sure what you meant by \"%s\".", rest)
 		return
 	}
 
-	client.ToClient <- fmt.Sprintf("Not sure what you meant by \"%s\".", rest)
+	client.ToClient <- target.Name
+	desc, ok := target.Table["description"].(string)
+	if ok && desc != "" {
+		client.ToClient <- desc
+	} else {
+		client.ToClient <- "You see nothing special."
+	}
+
+	target.TryToCall("Looked", map[string]interface{}{
+		"me":     char.Id,
+		"here":   char.Parent,
+		"target": target.Id,
+	}, char)
 }
 
 func GameSay(client *ClientPump, char *Thing, rest string) {
@@ -332,53 +343,50 @@ func GameClient(client *ClientPump, account *Account) {
 				// No actions on thisThing matched. Try up the environment.
 				thisThing = World.ThingForId(thisThing.Parent)
 			}
-			if action != nil {
-				// Can I use this action?
-				if action.DeniedById(char.Id) {
-					// TODO: action failure messages? once we have them? maybe?
-					client.ToClient <- fmt.Sprintf("You can't use that.")
-					break Command
-				}
-
-				target := action.ActionTarget()
-				if target == nil {
-					client.ToClient <- fmt.Sprintf("Nothing happens.")
-					break Command
-				}
-
-				// Can we use that target?
-				if target.DeniedById(char.Id) {
-					// TODO: action failure messages? once we have them? maybe?
-					client.ToClient <- fmt.Sprintf("You can't use that.")
-					break Command
-				}
-
-				// TODO: run a program if target.Type == ProgramThing
-				// TODO: move to target.Parent if PlayerThing or RegularThing
-				switch target.Type {
-				case PlaceThing:
-					World.MoveThing(char, target)
-					GameLook(client, char, "")
-				case ProgramThing:
-					if target.Program == nil {
-						client.ToClient <- fmt.Sprintf("Nothing happens.")
-						break Command
-					}
-					target.Program.TryToCall("Run", map[string]interface{}{
-						"me":      char,
-						"here":    World.ThingForId(char.Parent),
-						"this":    action,   // the "trigger"
-						"command": parts[0], // un-lowered
-					}, rest)
-				default: // player, action, regular thing
-					client.ToClient <- fmt.Sprintf("Nothing happens.")
-					break Command
-				}
+			if action == nil {
+				log.Println("Found no action", command, ", womp womp")
+				client.ToClient <- fmt.Sprintf("Oops, not sure what you mean by \"%s\".", command)
 				break Command
 			}
 
-			// Didn't find such an action.
-			client.ToClient <- fmt.Sprintf("Oops, not sure what you mean by \"%s\".", command)
+			// Can I use this action?
+			if action.DeniedById(char.Id) {
+				// TODO: action failure messages? once we have them? maybe?
+				client.ToClient <- fmt.Sprintf("You can't use that.")
+				break Command
+			}
+
+			target := action.ActionTarget()
+			if target == nil {
+				client.ToClient <- fmt.Sprintf("Nothing happens.")
+				break Command
+			}
+			log.Println("Action", command, "has target", target)
+
+			// Can we use that target?
+			if target.DeniedById(char.Id) {
+				// TODO: action failure messages? once we have them? maybe?
+				client.ToClient <- fmt.Sprintf("You can't use that.")
+				break Command
+			}
+
+			// TODO: move to target.Parent if PlayerThing or RegularThing?
+			switch target.Type {
+			case PlaceThing:
+				log.Println("Target is a place, moving player there")
+				World.MoveThing(char, target)
+				GameLook(client, char, "")
+			case ProgramThing:
+				log.Println("Target is a program object")
+				target.TryToCall("Run", map[string]interface{}{
+					"me":      char.Id,
+					"here":    char.Parent,
+					"target":  action.Id, // the "trigger"
+					"command": parts[0],  // un-lowered
+				}, rest)
+			default: // player, action, regular thing
+				client.ToClient <- fmt.Sprintf("Nothing happens.")
+			}
 		}
 	}
 }
