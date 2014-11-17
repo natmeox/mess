@@ -196,6 +196,80 @@ func MessThingIndex(state *lua.State) int {
 	return 0
 }
 
+func TableFormat(state *lua.State) int {
+	state.CheckType(1, lua.LUA_TTABLE)
+	state.CheckType(2, lua.LUA_TTABLE) // ( ??? -- tbl tblFields )
+	log.Println("Formatting a table by a table")
+	printStackTypes(state)
+
+	numFields := int(state.ObjLen(-1))
+	fields := make([]string, numFields)
+	maxFieldLen := make(map[string]int)
+	for i := 0; i < numFields; i++ {
+		state.RawGeti(-1, i+1) // ( tbl tblFields -- tbl tblFields strHeader )
+		fieldName := state.ToString(-1)
+		fields[i] = fieldName
+		maxFieldLen[fieldName] = len(fieldName)
+		state.Pop(1) // ( tbl tblFields strField -- tbl tblFields )
+	}
+	state.Pop(1) // ( tbl tblFields -- tbl )
+	log.Println("Slurped up the fields list (table #2)")
+	printStackTypes(state)
+
+	numRows := int(state.ObjLen(-1))
+	rows := make([]map[string]string, numRows)
+	for i := 0; i < numRows; i++ {
+		state.RawGeti(-1, i+1) // ( tbl -- tbl tblRow )
+		row := make(map[string]string)
+		for _, field := range fields {
+			state.PushString(field) // ( tbl tblRow -- tbl tblRow strField )
+			state.RawGet(-2) // ( tbl tblRow strField -- tbl tblRow tblField )
+
+			row[field] = state.ToString(-1)
+
+			if maxFieldLen[field] < len(row[field]) {
+				maxFieldLen[field] = len(row[field])
+			}
+
+			state.Pop(1) // ( tbl tblRow tblField -- tbl tblRow )
+		}
+		rows[i] = row
+		state.Pop(1) // ( tbl tblRow -- tbl )
+	}
+	state.Pop(1) // ( tbl -- )
+	log.Println("Slurped up the data table (table #1)")
+	printStackTypes(state)
+
+	// %5s  %10s  %13s
+	fmtStrings := make([]string, numFields)
+	for i, field := range fields {
+		fmtStrings[i] = fmt.Sprintf("%%-%ds", maxFieldLen[field])
+	}
+	fmtString := strings.Join(fmtStrings, "  ")
+	log.Println("Figured out the format string:", fmtString)
+
+	rowStrings := make([]string, numRows+1)
+	rowFields := make([]interface{}, numFields)
+	for i, row := range rows {
+		for j, field := range fields {
+			rowFields[j] = row[field]
+		}
+		rowStrings[i+1] = fmt.Sprintf(fmtString, rowFields...)
+	}
+	for i := 0; i < numFields; i++ {
+		rowFields[i] = strings.Title(fields[i])
+	}
+	rowStrings[0] = fmt.Sprintf(fmtString, rowFields...)
+	log.Println("Yay formatted all the strings")
+
+	formattedTable := strings.Join(rowStrings, "\n")
+	state.PushString(formattedTable) // ( -- str )
+	log.Println("All done formatting this table!")
+	printStackTypes(state)
+
+	return 1
+}
+
 func installWorld(state *lua.State) {
 	log.Println("Installing world")
 	printStackTypes(state)
@@ -225,6 +299,11 @@ func installWorld(state *lua.State) {
 	state.SetField(-2, "Thing")
 
 	state.SetGlobal("world")
+
+	state.GetGlobal("table") // ( -- tblTable )
+	state.PushGoFunction(TableFormat)
+	state.SetField(-2, "format")
+	state.Pop(1) // ( tblTable -- )
 
 	log.Println("Finished installing world")
 	printStackTypes(state)
