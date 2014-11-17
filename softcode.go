@@ -185,6 +185,13 @@ func MessThingIndex(state *lua.State) int {
 		return member(state, thing)
 	}
 
+	// That wasn't one of our members, so look it up in our Table.
+	if data, ok := thing.Table[fieldName]; ok {
+		// TODO: instead of pushing a whole map if the script asks for one, maybe we should use another kind of userdata that tracks the name & can access its submembers until the script asks for the leaf (or a non-existent branch)?
+		pushValue(state, data)
+		return 1
+	}
+
 	// uh... I guess we didn't do anything, so...?
 	return 0
 }
@@ -226,9 +233,9 @@ func installWorld(state *lua.State) {
 func (p *ThingProgram) compile() error {
 	state := lua.NewState()
 	state.OpenBase()
+	state.OpenMath()
 	state.OpenString()
 	state.OpenTable()
-	state.OpenMath()
 	// Not IO & not OS.
 	// Not package: all our packages are preloaded.
 
