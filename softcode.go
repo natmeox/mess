@@ -62,6 +62,12 @@ func pushValue(state *lua.State, value interface{}) error {
 		}
 		// then leave the table on the stack
 
+	case ThingType:
+		// These are singleton sentinel values, so load them from Lua-land.
+		state.GetGlobal("world")
+		state.GetField(-1, strings.Title(v.String()))
+		state.Remove(-2)
+
 	case *Thing:
 		log.Println("Pushing *Thing onto lua stack")
 		return pushValue(state, v.Id)
@@ -113,6 +119,11 @@ func MessThingName(state *lua.State, thing *Thing) int {
 	return 1
 }
 
+func MessThingType(state *lua.State, thing *Thing) int {
+	pushValue(state, thing.Type)
+	return 1
+}
+
 func MessThingContents(state *lua.State, thing *Thing) int {
 	// make a new table
 	state.CreateTable(len(thing.Contents), 0) // ( -- tbl )
@@ -144,6 +155,7 @@ func MessThingTellMethod(state *lua.State, thing *Thing) int {
 
 var MessThingMembers map[string]MessThingMember = map[string]MessThingMember{
 	"name":     MessThingName,
+	"type":     MessThingType,
 	"contents": MessThingContents,
 	"tell":     MessThingTellMethod,
 }
@@ -187,18 +199,24 @@ func installWorld(state *lua.State) {
 
 	worldTable := map[string]interface{}{
 	/*
-		"type": map[string]interface{}{
-			"Player":
-			"Place":
-			"Program":
-			"Action":
-			"Thing":
-		},
 		"Root":
 		"Create": func...
 	*/
 	}
 	pushValue(state, worldTable)
+
+	// Install Thing types as singleton sentinel values. As userdata, these will only compare if the values are exactly equal.
+	state.NewUserdata(uintptr(0))
+	state.SetField(-2, "Player")
+	state.NewUserdata(uintptr(0))
+	state.SetField(-2, "Place")
+	state.NewUserdata(uintptr(0))
+	state.SetField(-2, "Program")
+	state.NewUserdata(uintptr(0))
+	state.SetField(-2, "Action")
+	state.NewUserdata(uintptr(0))
+	state.SetField(-2, "Thing")
+
 	state.SetGlobal("world")
 
 	log.Println("Finished installing world")
