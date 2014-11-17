@@ -88,6 +88,66 @@ func pushValue(state *lua.State, value interface{}) error {
 	return nil
 }
 
+func checkThing(state *lua.State, argNum int) *Thing {
+	userdata := state.CheckUdata(argNum, ThingMetaTableName)
+	if userdata == nil {
+		state.ArgError(argNum, "`Thing` expected")
+	}
+
+	var thingPtr *int64
+	thingPtr = (*int64)(userdata)
+	thingId := ThingId(*thingPtr)
+
+	thing := World.ThingForId(thingId)
+	if thing == nil {
+		state.ArgError(argNum, "`Thing` argument is no longer valid")
+	}
+
+	return thing
+}
+
+type MessThingMember func(state *lua.State, thing *Thing) int
+
+func MessThingName(state *lua.State, thing *Thing) int {
+	state.PushString(thing.Name)
+	return 1
+}
+
+func MessThingContents(state *lua.State, thing *Thing) int {
+	// make a new table
+	state.CreateTable(len(thing.Contents), 0) // ( -- tbl )
+	// for each content add a new lua-space Thing
+	for i, contentId := range thing.Contents {
+		state.PushInteger(int64(i))
+		pushValue(state, contentId)
+		state.SetTable(-3) // ( tbl key val -- tbl )
+	} // ( tbl -- tbl )
+	return 1
+}
+
+func MessThingTellMethod(state *lua.State, thing *Thing) int {
+	state.PushGoFunction(func(state *lua.State) int {
+		text := state.CheckString(2)
+		if text == "" {
+			state.ArgError(2, "`string` text to tell expected")
+		}
+		thing := checkThing(state, 1)
+
+		if thing.Client != nil {
+			thing.Client.ToClient <- text
+		}
+		state.Pop(2) // ( udataThing strText -- )
+		return 0
+	})
+	return 1
+}
+
+var MessThingMembers map[string]MessThingMember = map[string]MessThingMember{
+	"name":     MessThingName,
+	"contents": MessThingContents,
+	"tell":     MessThingTellMethod,
+}
+
 func MessThingIndex(state *lua.State) int {
 	log.Println("HEY WE MADE IT")
 	printStackTypes(state)
@@ -100,66 +160,17 @@ func MessThingIndex(state *lua.State) int {
 		log.Println("!!! OMG ARG #1 IS NOT A MESS.THING !!!")
 	}
 
-	userdata := state.CheckUdata(1, ThingMetaTableName)
-	log.Println("Userdata is", userdata)
-	if userdata == nil {
-		state.ArgError(1, "`Thing` expected")
-	}
-	log.Println("Arg #1 checks out, it's a Mess.Thing")
 	fieldName := state.CheckString(2)
 	if fieldName == "" {
 		state.ArgError(2, "`string` attribute name expected")
 	}
 	log.Println("Arg #2 checks out, it's a string")
 
-	var thingPtr *int64
-	thingPtr = (*int64)(userdata)
-	thingId := ThingId(*thingPtr)
+	thing := checkThing(state, 1)
+	log.Println("So we're tryin'a look up", fieldName, "on thing", thing.Id)
 
-	log.Println("So we're tryin'a look up", fieldName, "on thing", thingId)
-
-	thing := World.ThingForId(thingId)
-	// TODO: should we allow for such an invalid thing?
-	if thing == nil {
-		state.ArgError(1, "valid `Thing` expected")
-	}
-
-	switch fieldName {
-	case "name":
-		state.PushString(thing.Name)
-		return 1
-	case "contents":
-		// make a new table
-		state.CreateTable(len(thing.Contents), 0) // ( -- tbl )
-		// for each content add a new lua-space Thing
-		for i, contentId := range thing.Contents {
-			state.PushInteger(int64(i))
-			pushValue(state, contentId)
-			state.SetTable(-3) // ( tbl key val -- tbl )
-		} // ( tbl -- tbl )
-		return 1
-	case "tell":
-		state.PushGoFunction(func(state *lua.State) int {
-			text := state.CheckString(1)
-			if text == "" {
-				state.ArgError(1, "`string` text to tell expected")
-			}
-			if thing.Client != nil {
-				thing.Client.ToClient <- text
-			}
-			state.Pop(1) // the string???
-			return 0
-		})
-		return 1
-	/*
-		case "location":
-		case "owner":
-		case "find":
-		case "__gc":
-		case "__newindex":
-	*/
-	default:
-		// look up in Table
+	if member, ok := MessThingMembers[fieldName]; ok {
+		return member(state, thing)
 	}
 
 	// uh... I guess we didn't do anything, so...?
