@@ -319,7 +319,7 @@ func WebThingAccess(w http.ResponseWriter, r *http.Request) {
 	}
 
 	RenderTemplate(w, r, "thing/page/access.html", map[string]interface{}{
-		"Title": thing.Name,
+		"Title": fmt.Sprintf("Edit access lists – %s", thing.Name),
 		"Thing": thing,
 	})
 }
@@ -372,7 +372,7 @@ func WebThingEdit(w http.ResponseWriter, r *http.Request) {
 	typeName := thing.Type.String()
 	templateName := fmt.Sprintf("thing/type/%s.html", typeName)
 	RenderTemplate(w, r, templateName, map[string]interface{}{
-		"Title": fmt.Sprintf("Edit access lists - %s", thing.Name),
+		"Title": thing.Name,
 		"Thing": thing,
 	})
 }
