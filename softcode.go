@@ -114,16 +114,6 @@ func checkThing(state *lua.State, argNum int) *Thing {
 
 type MessThingMember func(state *lua.State, thing *Thing) int
 
-func MessThingName(state *lua.State, thing *Thing) int {
-	state.PushString(thing.Name)
-	return 1
-}
-
-func MessThingType(state *lua.State, thing *Thing) int {
-	pushValue(state, thing.Type)
-	return 1
-}
-
 func MessThingContents(state *lua.State, thing *Thing) int {
 	// make a new table
 	state.CreateTable(len(thing.Contents), 0) // ( -- tbl )
@@ -133,6 +123,11 @@ func MessThingContents(state *lua.State, thing *Thing) int {
 		pushValue(state, contentId)
 		state.SetTable(-3) // ( tbl key val -- tbl )
 	} // ( tbl -- tbl )
+	return 1
+}
+
+func MessThingName(state *lua.State, thing *Thing) int {
+	state.PushString(thing.Name)
 	return 1
 }
 
@@ -153,11 +148,16 @@ func MessThingTellMethod(state *lua.State, thing *Thing) int {
 	return 1
 }
 
+func MessThingType(state *lua.State, thing *Thing) int {
+	pushValue(state, thing.Type)
+	return 1
+}
+
 var MessThingMembers map[string]MessThingMember = map[string]MessThingMember{
-	"name":     MessThingName,
-	"type":     MessThingType,
 	"contents": MessThingContents,
+	"name":     MessThingName,
 	"tell":     MessThingTellMethod,
+	"type":     MessThingType,
 }
 
 func MessThingIndex(state *lua.State) int {
