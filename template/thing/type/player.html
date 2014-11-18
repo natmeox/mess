@@ -47,11 +47,11 @@
             <div class="col-sm-4">
                 <select id="pronouns" name="pronouns" class="form-control">
                     {{ $pron := .Thing.Table.pronouns }}
-                    <option value="they"{{ if and ($pron) (eq $pron "they") }} selected{{ end }}>They / their / theirs</option>
-                    <option value="she"{{ if and ($pron) (eq $pron "she") }} selected{{ end }}>She / her / hers</option>
-                    <option value="he"{{ if and ($pron) (eq $pron "he") }} selected{{ end }}>He / his / his</option>
-                    <option value="sie"{{ if and ($pron) (eq $pron "sie") }} selected{{ end }}>Sie / hir / hirs</option>
-                    <option value="it"{{ if and ($pron) (eq $pron "it") }} selected{{ end }}>It / its / its</option>
+                    <option value="they"{{ if and ($pron) (eq $pron "they") }} selected{{ end }}>They / their / them</option>
+                    <option value="she"{{ if and ($pron) (eq $pron "she") }} selected{{ end }}>She / her / her</option>
+                    <option value="he"{{ if and ($pron) (eq $pron "he") }} selected{{ end }}>He / his / him</option>
+                    <option value="sie"{{ if and ($pron) (eq $pron "sie") }} selected{{ end }}>Sie / hir / hir</option>
+                    <option value="it"{{ if and ($pron) (eq $pron "it") }} selected{{ end }}>It / its / it</option>
                     <option value="custom"{{ if and ($pron) (eq $pron "custom") }} selected{{ end }}>Custom…</option>
                 </select>
             </div>

@@ -190,6 +190,69 @@ func (thing *Thing) ActionTarget() (target *Thing) {
 	return
 }
 
+var pronounSets map[string]map[string]string = map[string]map[string]string{
+	"it":   map[string]string{"s": "it", "r": "itself", "a": "its", "p": "its", "o": "it"},
+	"she":  map[string]string{"s": "she", "r": "herself", "a": "hers", "p": "her", "o": "her"},
+	"he":   map[string]string{"s": "he", "r": "himself", "a": "his", "p": "his", "o": "him"},
+	"they": map[string]string{"s": "they", "r": "themself", "a": "theirs", "p": "their", "o": "them"},
+	"sie":  map[string]string{"s": "sie", "r": "hirself", "a": "hirs", "p": "hir", "o": "hir"},
+	// "none" is a valid option but is generated in Pronouns()
+}
+
+func (thing *Thing) Pronouns() map[string]string {
+	ret := make(map[string]string)
+	var pronounCode string
+
+	pronounSetting := thing.Table["pronouns"]
+	switch pronset := pronounSetting.(type) {
+	case map[string]interface{}:
+		// pronset is already the values we should use. Copy out the known pronoun codes.
+		for key, _ := range pronounSets["it"] {
+			if pron, ok := pronset[key].(string); ok {
+				ret[key] = pron
+			}
+		}
+		return ret
+
+	default:
+		// For any other value (mainly nil) assume our Thing is a thing (that is, an "it").
+		pronounCode = "it"
+	case string:
+		pronounCode = pronset
+	}
+
+	if pronounSet, ok := pronounSets[pronounCode]; ok {
+		for code, pronoun := range pronounSet {
+			ret[code] = pronoun
+		}
+	} else {
+		ret["s"] = thing.Name
+		ret["r"] = thing.Name
+		ret["p"] = fmt.Sprintf("%s's", thing.Name)
+		ret["a"] = fmt.Sprintf("%s's", thing.Name)
+		ret["o"] = thing.Name
+	}
+	return ret
+}
+
+func (thing *Thing) FindNear(name string) *Thing {
+	nameLower := strings.ToLower(name)
+	location := World.ThingForId(thing.Parent)
+
+	sets := [][]ThingId{thing.Contents, []ThingId{location.Id}, location.Contents}
+	for _, set := range sets {
+		for _, otherId := range set {
+			otherThing := World.ThingForId(otherId)
+			otherNameLower := strings.ToLower(otherThing.Name)
+			if strings.HasPrefix(otherNameLower, nameLower) {
+				return otherThing
+			}
+		}
+	}
+
+	return nil
+}
+
 func (thing *Thing) TryToCall(name string, env map[string]interface{}, args ...interface{}) {
 	prog := thing.Program
 	if prog == nil {
@@ -237,21 +300,10 @@ func Identify(source *Thing, name string) *Thing {
 	if nameLower == "me" {
 		return source
 	}
-
-	here := World.ThingForId(source.Parent)
 	if nameLower == "here" {
-		return here
+		return World.ThingForId(source.Parent)
 	}
-
-	for _, otherId := range here.Contents {
-		otherThing := World.ThingForId(otherId)
-		otherNameLower := strings.ToLower(otherThing.Name)
-		if strings.HasPrefix(otherNameLower, nameLower) {
-			return otherThing
-		}
-	}
-
-	return nil
+	return source.FindNear(name)
 }
 
 func GameLook(client *ClientPump, char *Thing, rest string) {

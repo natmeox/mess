@@ -126,18 +126,55 @@ func MessThingContents(state *lua.State, thing *Thing) int {
 	return 1
 }
 
+func MessThingFindnearMethod(state *lua.State, thing *Thing) int {
+	state.PushGoFunction(func(state *lua.State) int {
+		thing := checkThing(state, 1)
+		text := state.CheckString(2)
+		if text == "" {
+			state.ArgError(2, "cannot find empty string")
+		}
+
+		otherThing := thing.FindNear(text)
+		if otherThing == nil {
+			return 0
+		}
+		pushValue(state, otherThing.Id)
+		return 1
+	})
+	return 1
+}
+
 func MessThingName(state *lua.State, thing *Thing) int {
 	state.PushString(thing.Name)
 	return 1
 }
 
+func MessThingPronounsubMethod(state *lua.State, thing *Thing) int {
+	state.PushGoFunction(func(state *lua.State) int {
+		thing := checkThing(state, 1)
+		text := state.CheckString(2)
+
+		for code, pronoun := range thing.Pronouns() {
+			lowerCode := fmt.Sprintf(`%%%s`, code)
+			upperCode := fmt.Sprintf(`%%%s`, strings.ToUpper(code))
+			text = strings.Replace(text, lowerCode, pronoun, -1)
+			text = strings.Replace(text, upperCode, strings.ToTitle(pronoun), -1)
+		}
+
+		text = strings.Replace(text, `%n`, thing.Name, -1)
+		text = strings.Replace(text, `%N`, thing.Name, -1)
+
+		state.Pop(2)           // ( udataThing str -- )
+		state.PushString(text) // ( -- str' )
+		return 1
+	})
+	return 1
+}
+
 func MessThingTellMethod(state *lua.State, thing *Thing) int {
 	state.PushGoFunction(func(state *lua.State) int {
-		text := state.CheckString(2)
-		if text == "" {
-			state.ArgError(2, "`string` text to tell expected")
-		}
 		thing := checkThing(state, 1)
+		text := state.CheckString(2)
 
 		if thing.Client != nil {
 			thing.Client.ToClient <- text
@@ -154,10 +191,12 @@ func MessThingType(state *lua.State, thing *Thing) int {
 }
 
 var MessThingMembers map[string]MessThingMember = map[string]MessThingMember{
-	"contents": MessThingContents,
-	"name":     MessThingName,
-	"tell":     MessThingTellMethod,
-	"type":     MessThingType,
+	"contents":   MessThingContents,
+	"findnear":   MessThingFindnearMethod,
+	"name":       MessThingName,
+	"pronounsub": MessThingPronounsubMethod,
+	"tell":       MessThingTellMethod,
+	"type":       MessThingType,
 }
 
 func MessThingIndex(state *lua.State) int {
@@ -173,11 +212,7 @@ func MessThingIndex(state *lua.State) int {
 	}
 
 	fieldName := state.CheckString(2)
-	if fieldName == "" {
-		state.ArgError(2, "`string` attribute name expected")
-	}
 	log.Println("Arg #2 checks out, it's a string")
-
 	thing := checkThing(state, 1)
 	log.Println("So we're tryin'a look up", fieldName, "on thing", thing.Id)
 
