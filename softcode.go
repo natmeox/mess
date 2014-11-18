@@ -223,7 +223,7 @@ func TableFormat(state *lua.State) int {
 		row := make(map[string]string)
 		for _, field := range fields {
 			state.PushString(field) // ( tbl tblRow -- tbl tblRow strField )
-			state.RawGet(-2) // ( tbl tblRow strField -- tbl tblRow tblField )
+			state.RawGet(-2)        // ( tbl tblRow strField -- tbl tblRow tblField )
 
 			row[field] = state.ToString(-1)
 
