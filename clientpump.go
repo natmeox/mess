@@ -10,8 +10,8 @@ import (
 
 type ClientPump struct {
 	ToServer chan string
-	writer *bufio.Writer
-	conn net.Conn
+	writer   *bufio.Writer
+	conn     net.Conn
 }
 
 var clientLock sync.Mutex
