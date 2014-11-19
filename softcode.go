@@ -208,7 +208,7 @@ func MessThingTellMethod(state *lua.State, thing *Thing) int {
 		text := state.CheckString(2)
 
 		if thing.Client != nil {
-			thing.Client.ToClient <- text
+			thing.Client.Send(text)
 		}
 		state.Pop(2) // ( udataThing strText -- )
 		return 0
@@ -240,7 +240,7 @@ func MessThingTellallMethod(state *lua.State, thing *Thing) int {
 				continue
 			}
 			if content.Client != nil {
-				content.Client.ToClient <- text
+				content.Client.Send(text)
 			}
 		}
 

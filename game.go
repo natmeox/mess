@@ -294,8 +294,8 @@ func (thing *Thing) TryToCall(name string, env map[string]interface{}, args ...i
 	}
 	ownClient := owner.Client
 	if ownClient != nil {
-		ownClient.ToClient <- fmt.Sprintf("Error with your program '%s': %s",
-			thing.Name, err.Error())
+		ownClient.Send(fmt.Sprintf("Error with your program '%s': %s",
+			thing.Name, err.Error()))
 	}
 }
 
@@ -334,17 +334,16 @@ func GameLook(client *ClientPump, char *Thing, rest string) {
 	target := Identify(char, rest)
 
 	if target == nil {
-		client.ToClient <- fmt.Sprintf("Not sure what you meant by \"%s\".", rest)
+		client.Send(fmt.Sprintf("Not sure what you meant by \"%s\".", rest))
 		return
 	}
 
-	client.ToClient <- target.Name
+	client.Send(target.Name)
 	desc, ok := target.Table["description"].(string)
-	if ok && desc != "" {
-		client.ToClient <- desc
-	} else {
-		client.ToClient <- "You see nothing special."
+	if !ok || desc == "" {
+		desc = "You see nothing special."
 	}
+	client.Send(desc)
 
 	target.TryToCall("Looked", map[string]interface{}{
 		"me":     char.Id,
@@ -354,7 +353,7 @@ func GameLook(client *ClientPump, char *Thing, rest string) {
 }
 
 func GameSay(client *ClientPump, char *Thing, rest string) {
-	client.ToClient <- fmt.Sprintf("You say, \"%s\"", rest)
+	client.Send(fmt.Sprintf("You say, \"%s\"", rest))
 
 	text := fmt.Sprintf("%s says, \"%s\"", char.Name, rest)
 	parent := World.ThingForId(char.Parent)
@@ -364,7 +363,7 @@ func GameSay(client *ClientPump, char *Thing, rest string) {
 		}
 		otherChar := World.ThingForId(otherId)
 		if otherChar.Client != nil {
-			otherChar.Client.ToClient <- text
+			otherChar.Client.Send(text)
 		}
 	}
 }
@@ -381,6 +380,12 @@ func GameClient(client *ClientPump, account *Account) {
 	GameLook(client, char, "")
 
 	for input := range client.ToServer {
+		if input == "QUIT" {
+			client.Send("Thanks for spending time with the mess today!")
+			client.Close()
+			return
+		}
+
 		parts := strings.SplitN(input, " ", 2)
 		command := strings.ToLower(parts[0])
 		rest := ""
@@ -391,10 +396,6 @@ func GameClient(client *ClientPump, account *Account) {
 
 	Command:
 		switch command {
-		case "quit":
-			client.ToClient <- "Thanks for spending time with the mess today!"
-			close(client.ToClient)
-			break
 		case "look":
 			GameLook(client, char, rest)
 		case "say":
@@ -418,20 +419,20 @@ func GameClient(client *ClientPump, account *Account) {
 			}
 			if action == nil {
 				log.Println("Found no action", command, ", womp womp")
-				client.ToClient <- fmt.Sprintf("Oops, not sure what you mean by \"%s\".", command)
+				client.Send(fmt.Sprintf("Oops, not sure what you mean by \"%s\".", command))
 				break Command
 			}
 
 			// Can I use this action?
 			if action.DeniedById(char.Id) {
 				// TODO: action failure messages? once we have them? maybe?
-				client.ToClient <- fmt.Sprintf("You can't use that.")
+				client.Send(fmt.Sprintf("You can't use that."))
 				break Command
 			}
 
 			target := action.ActionTarget()
 			if target == nil {
-				client.ToClient <- fmt.Sprintf("Nothing happens.")
+				client.Send(fmt.Sprintf("Nothing happens."))
 				break Command
 			}
 			log.Println("Action", command, "has target", target)
@@ -439,7 +440,7 @@ func GameClient(client *ClientPump, account *Account) {
 			// Can we use that target?
 			if target.DeniedById(char.Id) {
 				// TODO: action failure messages? once we have them? maybe?
-				client.ToClient <- fmt.Sprintf("You can't use that.")
+				client.Send(fmt.Sprintf("You can't use that."))
 				break Command
 			}
 
@@ -458,7 +459,7 @@ func GameClient(client *ClientPump, account *Account) {
 					"command": parts[0],  // un-lowered
 				}, rest)
 			default: // player, action, regular thing
-				client.ToClient <- fmt.Sprintf("Nothing happens.")
+				client.Send(fmt.Sprintf("Nothing happens."))
 			}
 		}
 	}

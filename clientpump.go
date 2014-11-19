@@ -5,32 +5,49 @@ import (
 	"log"
 	"net"
 	"strings"
+	"sync"
 )
 
 type ClientPump struct {
-	ToClient chan string
 	ToServer chan string
-
+	writer *bufio.Writer
 	conn net.Conn
 }
 
+var clientLock sync.Mutex
 var clients map[net.Conn]*ClientPump = make(map[net.Conn]*ClientPump)
 
 func NewClientPump(conn net.Conn) *ClientPump {
-	client := &ClientPump{make(chan string), make(chan string), conn}
+	clientLock.Lock()
+	defer clientLock.Unlock()
+
+	client := &ClientPump{make(chan string), bufio.NewWriter(conn), conn}
 	clients[conn] = client
 
 	// Start the client service.
-	go client.Send()
 	go client.Read()
 
 	return client
 }
 
 func (client *ClientPump) Close() {
-	close(client.ToClient)
-	client.conn.Close()
+	log.Println("Possibly closing ClientPump", client)
+	clientLock.Lock()
+
+	if _, ok := clients[client.conn]; !ok {
+		// We already closed.
+		log.Println("Avoided duplicate Close() of ClientPump", client)
+		clientLock.Unlock()
+		return
+	}
+
+	// Remove us so we can finish the connection in peace.
 	client.Remove()
+	clientLock.Unlock()
+
+	log.Println("All flushed. Commencing close of the ClientPump", client)
+	client.conn.Close()
+	close(client.ToServer)
 }
 
 func (client *ClientPump) Equal(other *ClientPump) bool {
@@ -52,38 +69,26 @@ func (client *ClientPump) Read() {
 		}
 		text = strings.TrimRight(text, "\r\n")
 
-		// Let QUIT quit right up front (for now).
-		if text == "QUIT" {
-			log.Println("Reading client", client, "ended due to client QUIT")
-			break
-		}
-
 		log.Println("Reading client", client, "received >", text)
 		client.ToServer <- text
 	}
-	client.Remove()
 	log.Println("Reader for", client, "stopped")
+	client.Close()
 }
 
-func (client *ClientPump) Send() {
-	writer := bufio.NewWriter(client.conn)
-	for text := range client.ToClient {
-		log.Println("Sending", text, "to", client)
+func (client *ClientPump) Send(text string) {
+	log.Println("Sending", text, "to", client)
 
-		_, err := writer.WriteString(text)
+	_, err := client.writer.WriteString(text)
+	if err == nil {
+		err = client.writer.WriteByte('\n')
 		if err == nil {
-			err = writer.WriteByte('\n')
-			if err == nil {
-				err = writer.Flush()
-			}
-		}
-		if err != nil {
-			log.Println("Sending text to", client, "failed:", err)
-			client.Close()
-			continue // quits when ToClient is closed
+			err = client.writer.Flush()
 		}
 	}
-	log.Println("Sending to client", client, "quitting")
-	client.conn.Close()
-	client.Remove()
+	if err != nil {
+		log.Println("Sending text to", client, "failed:", err)
+		client.Close()
+		return
+	}
 }

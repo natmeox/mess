@@ -72,7 +72,7 @@ func loadWelcomeScreen() (string, error) {
 func WelcomeConnect(client *ClientPump, rest string) (endWelcome bool) {
 	parts := strings.SplitN(rest, " ", 2)
 	if len(parts) < 2 {
-		client.ToClient <- "To connect, type: connect name password"
+		client.Send("To connect, type: connect name password")
 		return false
 	}
 	name, password := parts[0], parts[1]
@@ -81,7 +81,7 @@ func WelcomeConnect(client *ClientPump, rest string) (endWelcome bool) {
 
 	account := Accounts.AccountForLogin(name, password)
 	if account == nil {
-		client.ToClient <- "Hmm, there doesn't appear to be an account with that name and password."
+		client.Send("Hmm, there doesn't appear to be an account with that name and password.")
 		return false
 	}
 
@@ -96,18 +96,18 @@ func WelcomeConnect(client *ClientPump, rest string) (endWelcome bool) {
 func WelcomeRegister(client *ClientPump, rest string) {
 	parts := strings.SplitN(rest, " ", 2)
 	if len(parts) < 2 {
-		client.ToClient <- "To register, type: register name password"
+		client.Send("To register, type: register name password")
 		return
 	}
 	name, password := parts[0], parts[1]
 
 	account := Accounts.CreateAccount(name, password)
 	if account == nil {
-		client.ToClient <- "Oops, we were unable to register you with that name."
+		client.Send("Oops, we were unable to register you with that name.")
 		return
 	}
 
-	client.ToClient <- "Yay, you were successfully registered. Type 'connect name password' to connect!"
+	client.Send("Yay, you were successfully registered. Type 'connect name password' to connect!")
 }
 
 func WelcomeClient(client *ClientPump) {
@@ -116,8 +116,14 @@ func WelcomeClient(client *ClientPump) {
 		screen = "WELCOME"
 	}
 
-	client.ToClient <- screen
+	client.Send(screen)
 	for input := range client.ToServer {
+		if input == "QUIT" {
+			client.Send("Thanks for spending time with the mess today!")
+			client.Close()
+			return
+		}
+
 		parts := strings.SplitN(input, " ", 2)
 		command := strings.ToLower(parts[0])
 		rest := ""
@@ -132,12 +138,8 @@ func WelcomeClient(client *ClientPump) {
 			}
 		case "register":
 			WelcomeRegister(client, rest)
-		case "quit":
-			client.ToClient <- "Thanks for spending time with the mess today!"
-			close(client.ToClient)
-			return
 		default:
-			client.ToClient <- screen
+			client.Send(screen)
 		}
 	}
 }
