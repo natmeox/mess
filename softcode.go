@@ -144,6 +144,37 @@ func MessThingFindnearMethod(state *lua.State, thing *Thing) int {
 	return 1
 }
 
+func MessThingFindinsideMethod(state *lua.State, thing *Thing) int {
+	state.PushGoFunction(func(state *lua.State) int {
+		thing := checkThing(state, 1)
+		text := state.CheckString(2)
+		if text == "" {
+			state.ArgError(2, "cannot find empty string")
+		}
+
+		otherThing := thing.FindInside(text)
+		if otherThing == nil {
+			return 0
+		}
+		pushValue(state, otherThing.Id)
+		return 1
+	})
+	return 1
+}
+
+func MessThingMovetoMethod(state *lua.State, thing *Thing) int {
+	state.PushGoFunction(func(state *lua.State) int {
+		source := checkThing(state, 1)
+		target := checkThing(state, 2)
+
+		ok := source.MoveTo(target)
+
+		state.PushBoolean(ok)
+		return 1
+	})
+	return 1
+}
+
 func MessThingName(state *lua.State, thing *Thing) int {
 	state.PushString(thing.Name)
 	return 1
@@ -185,6 +216,39 @@ func MessThingTellMethod(state *lua.State, thing *Thing) int {
 	return 1
 }
 
+func MessThingTellallMethod(state *lua.State, thing *Thing) int {
+	state.PushGoFunction(func(state *lua.State) int {
+		place := checkThing(state, 1)
+		text := state.CheckString(2)
+
+		// If arg 3 is present, it should be a table of Things to exclude.
+		excludes := make(map[ThingId]bool)
+		if 2 < state.GetTop() {
+			if !state.IsTable(3) {
+				state.ArgError(3, "expected `table` for exclude argument if present")
+			}
+			numExcludes := int(state.ObjLen(3))
+			for i := 0; i < numExcludes; i++ {
+				state.RawGeti(3, i+1)
+				exclude := checkThing(state, -1)
+				excludes[exclude.Id] = true
+			}
+		}
+
+		for _, content := range place.GetContents() {
+			if excludes[content.Id] {
+				continue
+			}
+			if content.Client != nil {
+				content.Client.ToClient <- text
+			}
+		}
+
+		return 0
+	})
+	return 1
+}
+
 func MessThingType(state *lua.State, thing *Thing) int {
 	pushValue(state, thing.Type)
 	return 1
@@ -192,10 +256,13 @@ func MessThingType(state *lua.State, thing *Thing) int {
 
 var MessThingMembers map[string]MessThingMember = map[string]MessThingMember{
 	"contents":   MessThingContents,
+	"findinside": MessThingFindinsideMethod,
 	"findnear":   MessThingFindnearMethod,
+	"moveto":     MessThingMovetoMethod,
 	"name":       MessThingName,
 	"pronounsub": MessThingPronounsubMethod,
 	"tell":       MessThingTellMethod,
+	"tellall":    MessThingTellallMethod,
 	"type":       MessThingType,
 }
 

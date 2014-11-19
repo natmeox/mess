@@ -235,6 +235,14 @@ func (thing *Thing) Pronouns() map[string]string {
 	return ret
 }
 
+func (thing *Thing) MoveTo(target *Thing) bool {
+	if target.Type == ActionThing {
+		return false
+	}
+
+	return World.MoveThing(thing, target)
+}
+
 func (thing *Thing) FindNear(name string) *Thing {
 	nameLower := strings.ToLower(name)
 	location := World.ThingForId(thing.Parent)
@@ -247,6 +255,19 @@ func (thing *Thing) FindNear(name string) *Thing {
 			if strings.HasPrefix(otherNameLower, nameLower) {
 				return otherThing
 			}
+		}
+	}
+
+	return nil
+}
+
+func (thing *Thing) FindInside(name string) *Thing {
+	nameLower := strings.ToLower(name)
+
+	for _, otherThing := range thing.GetContents() {
+		otherNameLower := strings.ToLower(otherThing.Name)
+		if strings.HasPrefix(otherNameLower, nameLower) {
+			return otherThing
 		}
 	}
 
@@ -426,7 +447,7 @@ func GameClient(client *ClientPump, account *Account) {
 			switch target.Type {
 			case PlaceThing:
 				log.Println("Target is a place, moving player there")
-				World.MoveThing(char, target)
+				char.MoveTo(target)
 				GameLook(client, char, "")
 			case ProgramThing:
 				log.Println("Target is a program object")
