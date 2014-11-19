@@ -68,7 +68,7 @@ func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 	thing = NewThing()
 	thing.Id = id
 
-	row := w.db.QueryRow("SELECT type, name, creator, created, owner, adminlist, allowlist, denylist, parent, tabledata, program FROM thing WHERE id = $1",
+	row := w.db.QueryRow("SELECT type, name, creator, created, owner, superuser, adminlist, allowlist, denylist, parent, tabledata, program FROM thing WHERE id = $1",
 		id)
 	var typetext string
 	var creator sql.NullInt64
@@ -77,8 +77,8 @@ func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 	var tabledata types.JsonText
 	var program sql.NullString
 	err := row.Scan(&typetext, &thing.Name, &creator, &thing.Created, &owner,
-		&thing.AdminList, &thing.AllowList, &thing.DenyList, &parent, &tabledata,
-		&program)
+		&thing.Superuser, &thing.AdminList, &thing.AllowList, &thing.DenyList,
+		&parent, &tabledata, &program)
 	if err != nil {
 		log.Println("Error finding thing", id, ":", err.Error())
 		return nil

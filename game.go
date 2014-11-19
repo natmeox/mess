@@ -64,6 +64,7 @@ type Thing struct {
 	Created time.Time
 
 	Owner     ThingId
+	Superuser bool
 	AdminList ThingIdList
 	AllowList ThingIdList
 	DenyList  ThingIdList
@@ -103,6 +104,11 @@ func (thing *Thing) OwnedById(playerId ThingId) bool {
 }
 
 func (thing *Thing) EditableById(playerId ThingId) bool {
+	editor := World.ThingForId(playerId)
+	if editor.Superuser {
+		return true
+	}
+
 	switch {
 	case thing.Type == PlayerThing:
 		return thing.Id == playerId
