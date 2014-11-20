@@ -398,6 +398,7 @@ func GameClient(client *ClientPump, account *Account) {
 	// TODO: motd?
 	GameLook(client, char, "")
 
+Input:
 	for input := range client.ToServer {
 		if input == "QUIT" {
 			client.Send("Thanks for spending time with the mess today!")
@@ -413,73 +414,74 @@ func GameClient(client *ClientPump, account *Account) {
 		}
 		log.Println("Unused portion of command:", rest)
 
-	Command:
 		switch command {
 		case "look":
 			GameLook(client, char, rest)
+			continue Input
 		case "say":
 			GameSay(client, char, rest)
-		default:
-			// Look up the environment for an action with that command.
-			var action *Thing
-			thisThing := char
-		FindThing:
-			for thisThing != nil {
-				for _, thingId := range thisThing.Contents {
-					thing := World.ThingForId(thingId)
-					if thing.ActionMatches(command) {
-						action = thing
-						break FindThing
-					}
+			continue Input
+		}
+
+		// Look up the environment for an action with that command.
+		var action *Thing
+		thisThing := char
+	FindThing:
+		for thisThing != nil {
+			for _, thingId := range thisThing.Contents {
+				thing := World.ThingForId(thingId)
+				if thing.ActionMatches(command) {
+					action = thing
+					break FindThing
 				}
-
-				// No actions on thisThing matched. Try up the environment.
-				thisThing = World.ThingForId(thisThing.Parent)
-			}
-			if action == nil {
-				log.Println("Found no action", command, ", womp womp")
-				client.Send(fmt.Sprintf("Oops, not sure what you mean by \"%s\".", command))
-				break Command
 			}
 
-			// Can I use this action?
-			if action.DeniedById(char.Id) {
-				// TODO: action failure messages? once we have them? maybe?
-				client.Send(fmt.Sprintf("You can't use that."))
-				break Command
-			}
+			// No actions on thisThing matched. Try up the environment.
+			thisThing = World.ThingForId(thisThing.Parent)
+		}
+		if action == nil {
+			log.Println("Found no action", command, ", womp womp")
+			client.Send(fmt.Sprintf("Oops, not sure what you mean by \"%s\".", command))
+			continue Input
+		}
 
-			target := action.ActionTarget()
-			if target == nil {
-				client.Send(fmt.Sprintf("Nothing happens."))
-				break Command
-			}
-			log.Println("Action", command, "has target", target)
+		// Can I use this action?
+		if action.DeniedById(char.Id) {
+			// TODO: action failure messages? once we have them? maybe?
+			client.Send(fmt.Sprintf("You can't use that."))
+			continue Input
+		}
 
-			// Can we use that target?
-			if target.DeniedById(char.Id) {
-				// TODO: action failure messages? once we have them? maybe?
-				client.Send(fmt.Sprintf("You can't use that."))
-				break Command
-			}
+		target := action.ActionTarget()
+		if target == nil {
+			client.Send(fmt.Sprintf("Nothing happens."))
+			continue Input
+		}
+		log.Println("Action", command, "has target", target)
 
-			// TODO: move to target.Parent if PlayerThing or RegularThing?
-			switch target.Type {
-			case PlaceThing:
-				log.Println("Target is a place, moving player there")
-				char.MoveTo(target)
-				GameLook(client, char, "")
-			case ProgramThing:
-				log.Println("Target is a program object")
-				target.TryToCall("Run", map[string]interface{}{
-					"me":      char.Id,
-					"here":    char.Parent,
-					"target":  action.Id, // the "trigger"
-					"command": parts[0],  // un-lowered
-				}, rest)
-			default: // player, action, regular thing
-				client.Send(fmt.Sprintf("Nothing happens."))
-			}
+		// Can we use that target?
+		if target.DeniedById(char.Id) {
+			// TODO: action failure messages? once we have them? maybe?
+			client.Send(fmt.Sprintf("You can't use that."))
+			continue Input
+		}
+
+		// TODO: move to target.Parent if PlayerThing or RegularThing?
+		switch target.Type {
+		case PlaceThing:
+			log.Println("Target is a place, moving player there")
+			char.MoveTo(target)
+			GameLook(client, char, "")
+		case ProgramThing:
+			log.Println("Target is a program object")
+			target.TryToCall("Run", map[string]interface{}{
+				"me":      char.Id,
+				"here":    char.Parent,
+				"target":  action.Id, // the "trigger"
+				"command": parts[0],  // un-lowered
+			}, rest)
+		default: // player, action, regular thing
+			client.Send(fmt.Sprintf("Nothing happens."))
 		}
 	}
 }
