@@ -426,18 +426,32 @@ Input:
 		// Look up the environment for an action with that command.
 		var action *Thing
 		thisThing := char
-	FindThing:
+	FindActionUp:
 		for thisThing != nil {
-			for _, thingId := range thisThing.Contents {
-				thing := World.ThingForId(thingId)
-				if thing.ActionMatches(command) {
-					action = thing
-					break FindThing
+			for _, candAction := range thisThing.GetContents() {
+				if candAction.ActionMatches(command) {
+					action = candAction
+					break FindActionUp
 				}
 			}
 
 			// No actions on thisThing matched. Try up the environment.
 			thisThing = World.ThingForId(thisThing.Parent)
+		}
+		if action == nil {
+			here := World.ThingForId(char.Parent)
+		FindActionHere:
+			for _, hostThing := range here.GetContents() {
+				if hostThing.Type != RegularThing {
+					continue FindActionHere
+				}
+				for _, candAction := range hostThing.GetActions() {
+					if candAction.ActionMatches(command) {
+						action = candAction
+						break FindActionHere
+					}
+				}
+			}
 		}
 		if action == nil {
 			log.Println("Found no action", command, ", womp womp")
