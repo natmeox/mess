@@ -2,7 +2,7 @@
 
     {{ template "navbar.html" . }}
 
-    <h3>Editing data for “{{ .Thing.Name }}”</h3>
+    <h3>Editing data for “<a href="{{ .Thing.GetURL }}">{{ .Thing.Name }}</a>”</h3>
 
     <form method="post" class="form form-horizontal" role="form">
         <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
@@ -30,7 +30,7 @@
         <div class="form-group">
             <div class="col-sm-12">
                 <button class="btn btn-primary">Save</button>
-                <a href="/" class="btn btn-cancel">Cancel</a>
+                <a href="{{ .Thing.GetURL }}" class="btn btn-cancel">Cancel</a>
             </div>
         </div>
 
