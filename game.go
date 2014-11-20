@@ -9,42 +9,50 @@ import (
 
 type ThingId int
 type ThingIdList []ThingId
-type ThingType int
+type ThingType string
 
 const (
-	RegularThing ThingType = iota
-	PlaceThing
-	PlayerThing
-	ActionThing
-	ProgramThing
+	RegularThing ThingType = "thing"
+	PlaceThing             = "place"
+	PlayerThing            = "player"
+	ActionThing            = "action"
+	ProgramThing           = "program"
 )
 
 func ThingTypeForName(name string) ThingType {
-	switch name {
-	case "place":
-		return PlaceThing
-	case "player":
-		return PlayerThing
-	case "action":
-		return ActionThing
-	case "program":
-		return ProgramThing
-	}
-	return RegularThing
+	return ThingType(name)
 }
 
 func (tt ThingType) String() string {
+	return string(tt)
+}
+
+func (tt ThingType) HasOwner() bool {
 	switch tt {
-	case PlaceThing:
-		return "place"
 	case PlayerThing:
-		return "player"
-	case ActionThing:
-		return "action"
-	case ProgramThing:
-		return "program"
+		return false
 	}
-	return "thing"
+	return true
+}
+
+func (tt ThingType) HasContents() bool {
+	switch tt {
+	case ActionThing:
+		return false
+	case ProgramThing:
+		return false
+	}
+	return true
+}
+
+func (tt ThingType) HasActions() bool {
+	switch tt {
+	case ActionThing:
+		return false
+	case ProgramThing:
+		return false
+	}
+	return true
 }
 
 func (tl *ThingIdList) Things() []*Thing {
@@ -134,6 +142,9 @@ func (thing *Thing) DeniedById(playerId ThingId) bool {
 }
 
 func (thing *Thing) GetContents() (contents []*Thing) {
+	if !thing.Type.HasContents() {
+		return
+	}
 	for _, thingId := range thing.Contents {
 		content := World.ThingForId(thingId)
 		if content.Type != ActionThing {
@@ -144,6 +155,9 @@ func (thing *Thing) GetContents() (contents []*Thing) {
 }
 
 func (thing *Thing) GetActions() (actions []*Thing) {
+	if !thing.Type.HasActions() {
+		return
+	}
 	for _, thingId := range thing.Contents {
 		action := World.ThingForId(thingId)
 		if action.Type == ActionThing {
@@ -242,10 +256,9 @@ func (thing *Thing) Pronouns() map[string]string {
 }
 
 func (thing *Thing) MoveTo(target *Thing) bool {
-	if target.Type == ActionThing {
+	if target.Type.HasContents() {
 		return false
 	}
-
 	return World.MoveThing(thing, target)
 }
 

@@ -1,4 +1,4 @@
-{{ if ne .Thing.Type 2 }}
+{{ if .Thing.Type.HasOwner }}
     <div class="form-group">
         <label class="col-sm-2 control-label">Owner</label>
         <div class="col-sm-10">
@@ -20,6 +20,7 @@
     </div>
 </div>
 
+{{ if .Thing.Type.HasContents }}
 <div class="form-group">
     <label class="col-sm-2 control-label">Contents</label>
     <div class="col-sm-10">
@@ -35,7 +36,9 @@
         </p>
     </div>
 </div>
+{{ end }}
 
+{{ if .Thing.Type.HasActions }}
 <div class="form-group">
     <label class="col-sm-2 control-label">Actions</label>
     <div class="col-sm-10">
@@ -108,3 +111,4 @@
     $(hookUpAddAction);
 
 </script>
+{{ end }}

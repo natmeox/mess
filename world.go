@@ -49,6 +49,20 @@ func (l ThingIdList) Value() (driver.Value, error) {
 	return []byte(arrayLiteral), nil
 }
 
+func (tt *ThingType) Scan(src interface{}) error {
+	asBytes, ok := src.([]byte)
+	if !ok {
+		return errors.New("Scan source was not []byte")
+	}
+
+	(*tt) = ThingType(asBytes)
+	return nil
+}
+
+func (tt ThingType) Value() (driver.Value, error) {
+	return []byte(tt), nil
+}
+
 type WorldStore interface {
 	ThingForId(id ThingId) *Thing
 	CreateThing(name string, tt ThingType, creator *Thing, parent *Thing) (thing *Thing)
@@ -70,20 +84,18 @@ func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 
 	row := w.db.QueryRow("SELECT type, name, creator, created, owner, superuser, adminlist, allowlist, denylist, parent, tabledata, program FROM thing WHERE id = $1",
 		id)
-	var typetext string
 	var creator sql.NullInt64
 	var owner sql.NullInt64
 	var parent sql.NullInt64
 	var tabledata types.JsonText
 	var program sql.NullString
-	err := row.Scan(&typetext, &thing.Name, &creator, &thing.Created, &owner,
+	err := row.Scan(&thing.Type, &thing.Name, &creator, &thing.Created, &owner,
 		&thing.Superuser, &thing.AdminList, &thing.AllowList, &thing.DenyList,
 		&parent, &tabledata, &program)
 	if err != nil {
 		log.Println("Error finding thing", id, ":", err.Error())
 		return nil
 	}
-	thing.Type = ThingTypeForName(typetext)
 	if creator.Valid {
 		thing.Creator = ThingId(creator.Int64)
 	}
@@ -103,24 +115,26 @@ func (w *DatabaseWorld) ThingForId(id ThingId) (thing *Thing) {
 	}
 
 	// Find thing's contents.
-	contentRows, err := w.db.Query("SELECT id FROM thing WHERE parent = $1", id)
-	if err != nil {
-		log.Println("Error finding contents", id, ":", err.Error())
-		return nil
-	}
-	defer contentRows.Close()
-	for contentRows.Next() {
-		var childId ThingId
-		if err := contentRows.Scan(&childId); err != nil {
+	if thing.Type.HasContents() {
+		contentRows, err := w.db.Query("SELECT id FROM thing WHERE parent = $1", id)
+		if err != nil {
 			log.Println("Error finding contents", id, ":", err.Error())
 			return nil
 		}
+		defer contentRows.Close()
+		for contentRows.Next() {
+			var childId ThingId
+			if err := contentRows.Scan(&childId); err != nil {
+				log.Println("Error finding contents", id, ":", err.Error())
+				return nil
+			}
 
-		thing.Contents = append(thing.Contents, childId)
-	}
-	if err := contentRows.Err(); err != nil {
-		log.Println("Error finding contents", id, ":", err.Error())
-		return nil
+			thing.Contents = append(thing.Contents, childId)
+		}
+		if err := contentRows.Err(); err != nil {
+			log.Println("Error finding contents", id, ":", err.Error())
+			return nil
+		}
 	}
 
 	return
@@ -133,7 +147,7 @@ func (w *DatabaseWorld) CreateThing(name string, tt ThingType, creator *Thing, p
 	thing.Parent = parent.Id
 
 	var creatorId sql.NullInt64
-	if creator != nil && thing.Type != PlayerThing {
+	if creator != nil && thing.Type.HasOwner() {
 		creatorId.Int64 = int64(creator.Id)
 		thing.Creator = creator.Id
 		thing.Owner = creator.Id
@@ -173,7 +187,7 @@ func (w *DatabaseWorld) SaveThing(thing *Thing) (ok bool) {
 		parent.Valid = true
 	}
 	var owner sql.NullInt64
-	if thing.Owner != 0 {
+	if thing.Owner != 0 && thing.Type.HasOwner() {
 		owner.Int64 = int64(thing.Owner)
 		owner.Valid = true
 	}
