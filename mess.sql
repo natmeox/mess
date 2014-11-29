@@ -16,7 +16,7 @@ CREATE TABLE thing (
     program TEXT
 );
 
-INSERT INTO thing(id, type, name) VALUES (1, 'place', 'Room One');
+INSERT INTO thing(type, name) VALUES ('place', 'Room One');
 
 CREATE TABLE account (
     loginname TEXT NOT NULL PRIMARY KEY,
