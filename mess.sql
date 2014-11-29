@@ -16,6 +16,8 @@ CREATE TABLE thing (
     program TEXT
 );
 
+INSERT INTO thing(id, type, name) VALUES (1, 'place', 'Room One');
+
 CREATE TABLE account (
     loginname TEXT NOT NULL PRIMARY KEY,
     passwordhash TEXT NOT NULL,
